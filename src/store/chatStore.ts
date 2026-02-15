@@ -83,6 +83,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   clearChat: () => set({ messages: [], isStreaming: false }),
 
   getTranscriptJSON: () => {
-    return get().messages.filter((m) => m.role !== 'system');
+    return get().messages
+      .filter((m) => m.role !== 'system')
+      .map(({ images, ...rest }) => rest);
   },
 }));

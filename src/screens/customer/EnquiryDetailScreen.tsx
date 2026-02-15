@@ -40,10 +40,20 @@ export function EnquiryDetailScreen() {
 
       const { data: j } = await supabase
         .from('jobs')
-        .select('*, plumber:profiles!plumber_id(full_name, avatar_url)')
+        .select('*')
         .eq('enquiry_id', enquiryId)
         .maybeSingle();
-      setJob(j as any);
+
+      if (j?.plumber_id) {
+        const { data: plumber } = await supabase
+          .from('profiles')
+          .select('full_name, avatar_url')
+          .eq('id', j.plumber_id)
+          .single();
+        setJob({ ...j, plumber: plumber ?? undefined } as any);
+      } else {
+        setJob(j as any);
+      }
       setLoading(false);
     }
     load();

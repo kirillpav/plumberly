@@ -1,5 +1,3 @@
-import * as FileSystem from 'expo-file-system';
-import { decode } from 'base64-arraybuffer';
 import { supabase } from './supabase';
 
 export async function uploadEnquiryImage(
@@ -7,17 +5,16 @@ export async function uploadEnquiryImage(
   userId: string
 ): Promise<string | null> {
   try {
-    const base64 = await FileSystem.readAsStringAsync(uri, {
-      encoding: 'base64',
-    });
+    const response = await fetch(uri);
+    const arrayBuffer = await response.arrayBuffer();
 
-    const ext = uri.split('.').pop() ?? 'jpg';
+    const ext = uri.split('.').pop()?.toLowerCase() ?? 'jpg';
     const fileName = `${userId}/${Date.now()}.${ext}`;
     const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
 
     const { error } = await supabase.storage
       .from('enquiry-images')
-      .upload(fileName, decode(base64), { contentType });
+      .upload(fileName, arrayBuffer, { contentType });
 
     if (error) {
       console.error('Upload error:', error.message);

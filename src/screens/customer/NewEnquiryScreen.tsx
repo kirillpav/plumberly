@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Calendar } from 'react-native-calendars';
 import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
 import { InputField } from '@/components/shared/InputField';
@@ -39,8 +40,10 @@ const TIME_SLOTS = [
   'Flexible',
 ];
 
+type Nav = NativeStackNavigationProp<CustomerStackParamList>;
+
 export function NewEnquiryScreen() {
-  const nav = useNavigation();
+  const nav = useNavigation<Nav>();
   const route = useRoute<RouteProp<CustomerStackParamList, 'NewEnquiry'>>();
   const transcript = route.params?.transcript;
   const profile = useAuthStore((s) => s.profile);
@@ -58,7 +61,10 @@ export function NewEnquiryScreen() {
       Alert.alert('Required', 'Please select a problem type.');
       return;
     }
-    if (!profile?.id) return;
+    if (!profile?.id) {
+      Alert.alert('Error', 'Your profile is still loading. Please wait a moment and try again.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -68,6 +74,8 @@ export function NewEnquiryScreen() {
         if (url) uploadedUrls.push(url);
       }
 
+      const cleanTranscript = transcript?.map(({ images: _imgs, ...rest }) => rest);
+
       await createEnquiry({
         customerId: profile.id,
         title: problemType,
@@ -75,13 +83,17 @@ export function NewEnquiryScreen() {
         preferredDate: selectedDate || undefined,
         preferredTime: timeSlot || undefined,
         images: uploadedUrls,
-        chatbotTranscript: transcript,
+        chatbotTranscript: cleanTranscript,
       });
 
-      Alert.alert('Success', 'Your enquiry has been submitted!');
-      nav.goBack();
+      Alert.alert('Success', 'Your enquiry has been submitted!', [
+        {
+          text: 'View Enquiries',
+          onPress: () => nav.navigate('CustomerTabs', { screen: 'Enquiries' }),
+        },
+      ]);
     } catch (err: any) {
-      Alert.alert('Error', err.message);
+      Alert.alert('Error', err.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }

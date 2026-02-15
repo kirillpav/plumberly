@@ -23,7 +23,7 @@ export const useJobStore = create<JobState>((set, get) => ({
     try {
       let query = supabase
         .from('jobs')
-        .select('*, enquiry:enquiries(*), customer:profiles!customer_id(*), plumber:profiles!plumber_id(*)')
+        .select('*, enquiry:enquiries(*)')
         .order('created_at', { ascending: false });
 
       if (plumberId) {

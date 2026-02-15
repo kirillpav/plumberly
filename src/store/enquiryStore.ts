@@ -29,7 +29,7 @@ export const useEnquiryStore = create<EnquiryState>((set, get) => ({
     try {
       let query = supabase
         .from('enquiries')
-        .select('*, customer:profiles!customer_id(*)')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (customerId) {
@@ -39,6 +39,9 @@ export const useEnquiryStore = create<EnquiryState>((set, get) => ({
       const { data, error } = await query;
       if (error) throw error;
       set({ enquiries: (data ?? []) as unknown as Enquiry[] });
+    } catch (err) {
+      console.error('Failed to fetch enquiries:', err);
+      throw err;
     } finally {
       set({ isLoading: false });
     }
@@ -49,13 +52,19 @@ export const useEnquiryStore = create<EnquiryState>((set, get) => ({
       customer_id: customerId,
       title,
       description,
+      status: 'new',
       preferred_date: preferredDate ?? null,
       preferred_time: preferredTime ?? null,
       images: images ?? [],
       chatbot_transcript: chatbotTranscript ? JSON.parse(JSON.stringify(chatbotTranscript)) : null,
     });
     if (error) throw error;
-    await get().fetchEnquiries(customerId);
+
+    try {
+      await get().fetchEnquiries(customerId);
+    } catch (fetchErr) {
+      console.warn('Enquiry created but list refresh failed:', fetchErr);
+    }
   },
 
   updateEnquiry: async (id, updates) => {
