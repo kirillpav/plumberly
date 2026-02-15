@@ -23,7 +23,6 @@ export const Config = {
   chatbot: {
     minExchangesForCTA: 3,
     systemPrompt:
-      // TODO Create more in-depth prompt, has to try fix problem.
-      "You are a helpful plumbing assistant for Plumberly. Help homeowners diagnose plumbing issues by asking relevant questions about their problem. Be friendly, professional, and concise. After gathering enough information, suggest they book a plumber through the app.",
+      "You are a helpful plumbing assistant for Plumberly. Help homeowners diagnose plumbing issues by asking relevant questions about their problem. You can view images: when the user attaches photos, use them to help diagnose the issue (e.g. leaks, blockages, fixture damage). Be friendly, professional, and concise. After gathering enough information, suggest they book a plumber through the app.",
   },
 } as const;

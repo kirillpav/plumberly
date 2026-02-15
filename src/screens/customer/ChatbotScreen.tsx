@@ -15,7 +15,6 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
 import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
 import { ChatBubble } from '@/components/ChatBubble';
 import { PrimaryButton } from '@/components/shared/PrimaryButton';
@@ -40,7 +39,7 @@ export function ChatbotScreen() {
   const nav = useNavigation<Nav>();
   const { messages, isStreaming, sendMessage, getTranscriptJSON } = useChatStore();
   const [input, setInput] = useState('');
-  const [pendingImages, setPendingImages] = useState<string[]>([]);
+  const [pendingImages, setPendingImages] = useState<{ uri: string; base64: string }[]>([]);
   const flatListRef = useRef<FlatList>(null);
 
   const userExchanges = messages.filter((m) => m.role === 'user').length;
@@ -62,10 +61,12 @@ export function ChatbotScreen() {
       mediaTypes: ['images'],
       quality: 0.5,
       allowsMultipleSelection: false,
+      base64: true,
     });
 
-    if (!result.canceled && result.assets[0]) {
-      setPendingImages((prev) => [...prev, result.assets[0].uri]);
+    if (!result.canceled && result.assets[0]?.base64) {
+      const asset = result.assets[0];
+      setPendingImages((prev) => [...prev, { uri: asset.uri, base64: asset.base64! }]);
     }
   };
 
@@ -77,18 +78,10 @@ export function ChatbotScreen() {
     const msg = (text ?? input).trim();
     if ((!msg && pendingImages.length === 0) || isStreaming) return;
 
-    const imageDataUris: string[] = [];
-    for (const uri of pendingImages) {
-      try {
-        const base64 = await FileSystem.readAsStringAsync(uri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        const ext = uri.toLowerCase().endsWith('.png') ? 'png' : 'jpeg';
-        imageDataUris.push(`data:image/${ext};base64,${base64}`);
-      } catch {
-        // skip unreadable images
-      }
-    }
+    const imageDataUris = pendingImages.map((img) => {
+      const ext = img.uri.toLowerCase().endsWith('.png') ? 'png' : 'jpeg';
+      return `data:image/${ext};base64,${img.base64}`;
+    });
 
     setInput('');
     setPendingImages([]);
@@ -161,9 +154,9 @@ export function ChatbotScreen() {
 
         {pendingImages.length > 0 && (
           <View style={styles.pendingRow}>
-            {pendingImages.map((uri, i) => (
-              <View key={uri} style={styles.pendingThumb}>
-                <Image source={{ uri }} style={styles.pendingImage} />
+            {pendingImages.map((img, i) => (
+              <View key={img.uri} style={styles.pendingThumb}>
+                <Image source={{ uri: img.uri }} style={styles.pendingImage} />
                 <TouchableOpacity
                   style={styles.pendingRemove}
                   onPress={() => removePendingImage(i)}
