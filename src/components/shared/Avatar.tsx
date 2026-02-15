@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   initials: {
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: Colors.primary,
   },
 });

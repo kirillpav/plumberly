@@ -5,13 +5,17 @@ import {
   TextInput,
   FlatList,
   TouchableOpacity,
+  Image,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
 import { ChatBubble } from '@/components/ChatBubble';
 import { PrimaryButton } from '@/components/shared/PrimaryButton';
@@ -36,16 +40,59 @@ export function ChatbotScreen() {
   const nav = useNavigation<Nav>();
   const { messages, isStreaming, sendMessage, getTranscriptJSON } = useChatStore();
   const [input, setInput] = useState('');
+  const [pendingImages, setPendingImages] = useState<string[]>([]);
   const flatListRef = useRef<FlatList>(null);
 
   const userExchanges = messages.filter((m) => m.role === 'user').length;
   const showBookCTA = userExchanges >= Config.chatbot.minExchangesForCTA;
 
-  const handleSend = (text?: string) => {
+  const pickImage = async () => {
+    if (pendingImages.length >= 2) {
+      Alert.alert('Limit reached', 'You can attach up to 2 images per message.');
+      return;
+    }
+
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow access to your photos.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.5,
+      allowsMultipleSelection: false,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setPendingImages((prev) => [...prev, result.assets[0].uri]);
+    }
+  };
+
+  const removePendingImage = (index: number) => {
+    setPendingImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSend = async (text?: string) => {
     const msg = (text ?? input).trim();
-    if (!msg || isStreaming) return;
+    if ((!msg && pendingImages.length === 0) || isStreaming) return;
+
+    const imageDataUris: string[] = [];
+    for (const uri of pendingImages) {
+      try {
+        const base64 = await FileSystem.readAsStringAsync(uri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        const ext = uri.toLowerCase().endsWith('.png') ? 'png' : 'jpeg';
+        imageDataUris.push(`data:image/${ext};base64,${base64}`);
+      } catch {
+        // skip unreadable images
+      }
+    }
+
     setInput('');
-    sendMessage(msg);
+    setPendingImages([]);
+    sendMessage(msg || 'What do you see in this image?', imageDataUris.length > 0 ? imageDataUris : undefined);
   };
 
   const handleBook = () => {
@@ -53,7 +100,16 @@ export function ChatbotScreen() {
   };
 
   const renderItem = ({ item }: { item: ChatMessage }) => (
-    <ChatBubble content={item.content} role={item.role as 'user' | 'assistant'} />
+    <View>
+      <ChatBubble content={item.content} role={item.role as 'user' | 'assistant'} />
+      {item.images && item.images.length > 0 && (
+        <View style={styles.messageImages}>
+          {item.images.map((uri, i) => (
+            <Image key={i} source={{ uri }} style={styles.messageImage} />
+          ))}
+        </View>
+      )}
+    </View>
   );
 
   return (
@@ -103,7 +159,34 @@ export function ChatbotScreen() {
           </View>
         )}
 
+        {pendingImages.length > 0 && (
+          <View style={styles.pendingRow}>
+            {pendingImages.map((uri, i) => (
+              <View key={uri} style={styles.pendingThumb}>
+                <Image source={{ uri }} style={styles.pendingImage} />
+                <TouchableOpacity
+                  style={styles.pendingRemove}
+                  onPress={() => removePendingImage(i)}
+                >
+                  <Ionicons name="close-circle" size={20} color={Colors.error} />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+
         <View style={styles.inputRow}>
+          <TouchableOpacity
+            style={styles.attachBtn}
+            onPress={pickImage}
+            disabled={isStreaming}
+          >
+            <Ionicons
+              name="image-outline"
+              size={24}
+              color={isStreaming ? Colors.grey300 : Colors.grey600}
+            />
+          </TouchableOpacity>
           <TextInput
             style={styles.input}
             value={input}
@@ -115,9 +198,9 @@ export function ChatbotScreen() {
             editable={!isStreaming}
           />
           <TouchableOpacity
-            style={[styles.sendBtn, (!input.trim() || isStreaming) && styles.sendDisabled]}
+            style={[styles.sendBtn, (!input.trim() && pendingImages.length === 0 || isStreaming) && styles.sendDisabled]}
             onPress={() => handleSend()}
-            disabled={!input.trim() || isStreaming}
+            disabled={(!input.trim() && pendingImages.length === 0) || isStreaming}
           >
             <Ionicons name="send" size={20} color={Colors.white} />
           </TouchableOpacity>
@@ -158,6 +241,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.sm,
   },
+  messageImages: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.base,
+    marginTop: -Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  messageImage: {
+    width: 60,
+    height: 60,
+    borderRadius: BorderRadius.sm,
+  },
+  pendingRow: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.white,
+    borderTopWidth: 1,
+    borderTopColor: Colors.grey100,
+  },
+  pendingThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: BorderRadius.sm,
+    overflow: 'hidden',
+  },
+  pendingImage: {
+    width: '100%',
+    height: '100%',
+  },
+  pendingRemove: {
+    position: 'absolute',
+    top: 1,
+    right: 1,
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -166,6 +285,12 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.grey100,
     backgroundColor: Colors.white,
     gap: Spacing.sm,
+  },
+  attachBtn: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   input: {
     flex: 1,

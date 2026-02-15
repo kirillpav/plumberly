@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import type { ChatMessage } from '@/types/index';
-import { streamChatCompletion } from '@/lib/openai';
+import { chatCompletion, ChatCompletionMessage } from '@/lib/openai';
 import { Config } from '@/constants/config';
 
 interface ChatState {
   messages: ChatMessage[];
   isStreaming: boolean;
-  sendMessage: (content: string) => Promise<void>;
+  sendMessage: (content: string, imageUris?: string[]) => Promise<void>;
   clearChat: () => void;
   getTranscriptJSON: () => ChatMessage[];
 }
@@ -15,12 +15,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   isStreaming: false,
 
-  sendMessage: async (content: string) => {
+  sendMessage: async (content: string, imageUris?: string[]) => {
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
       content,
       timestamp: new Date().toISOString(),
+      images: imageUris,
     };
 
     set((state) => ({
@@ -28,48 +29,52 @@ export const useChatStore = create<ChatState>((set, get) => ({
       isStreaming: true,
     }));
 
-    const assistantMessage: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      role: 'assistant',
-      content: '',
-      timestamp: new Date().toISOString(),
-    };
-
-    set((state) => ({
-      messages: [...state.messages, assistantMessage],
-    }));
-
     try {
-      const apiMessages = [
-        { role: 'system' as const, content: Config.chatbot.systemPrompt },
-        ...get().messages
-          .filter((m) => m.role !== 'system' && m.id !== assistantMessage.id)
-          .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
+      const apiMessages: ChatCompletionMessage[] = [
+        { role: 'system', content: Config.chatbot.systemPrompt },
+        ...get().messages.map((m) => {
+          if (m.images && m.images.length > 0) {
+            return {
+              role: m.role as 'user' | 'assistant',
+              content: [
+                { type: 'text' as const, text: m.content },
+                ...m.images.map((uri) => ({
+                  type: 'image_url' as const,
+                  image_url: { url: uri },
+                })),
+              ],
+            };
+          }
+          return {
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+          };
+        }),
       ];
 
-      for await (const delta of streamChatCompletion(apiMessages)) {
-        set((state) => {
-          const msgs = [...state.messages];
-          const last = msgs[msgs.length - 1];
-          if (last && last.id === assistantMessage.id) {
-            msgs[msgs.length - 1] = { ...last, content: last.content + delta };
-          }
-          return { messages: msgs };
-        });
-      }
+      const reply = await chatCompletion(apiMessages);
+
+      const assistantMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: reply,
+        timestamp: new Date().toISOString(),
+      };
+
+      set((state) => ({
+        messages: [...state.messages, assistantMessage],
+      }));
     } catch (err) {
       console.error('Chat error:', err);
-      set((state) => {
-        const msgs = [...state.messages];
-        const last = msgs[msgs.length - 1];
-        if (last && last.id === assistantMessage.id) {
-          msgs[msgs.length - 1] = {
-            ...last,
-            content: last.content || 'Sorry, something went wrong. Please try again.',
-          };
-        }
-        return { messages: msgs };
-      });
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Sorry, something went wrong. Please try again.',
+        timestamp: new Date().toISOString(),
+      };
+      set((state) => ({
+        messages: [...state.messages, errorMessage],
+      }));
     } finally {
       set({ isStreaming: false });
     }

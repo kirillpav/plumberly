@@ -128,6 +128,6 @@ const styles = StyleSheet.create({
   },
   linkBold: {
     color: Colors.primary,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
   },
 });

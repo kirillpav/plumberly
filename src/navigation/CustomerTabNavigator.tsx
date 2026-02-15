@@ -29,7 +29,6 @@ function CustomerTabs() {
           height: 88,
         },
         tabBarLabelStyle: {
-          fontFamily: 'Inter-Medium',
           fontSize: 12,
         },
       }}
