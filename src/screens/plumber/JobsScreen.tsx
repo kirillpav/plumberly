@@ -47,9 +47,21 @@ export function JobsScreen() {
   const existingJobs = jobs.filter((j) => ['pending', 'quoted', 'accepted', 'in_progress'].includes(j.status));
   const completedJobs = jobs.filter((j) => j.status === 'completed');
 
-  const handleAccept = (enquiry: Enquiry) => {
-    if (!profile?.id) return;
-    acceptJob(enquiry.id, profile.id, enquiry.customer_id);
+  const [acceptingIds, setAcceptingIds] = useState<Set<string>>(new Set());
+
+  const handleAccept = async (enquiry: Enquiry) => {
+    if (!profile?.id || acceptingIds.has(enquiry.id)) return;
+    setAcceptingIds((prev) => new Set(prev).add(enquiry.id));
+    try {
+      await acceptJob(enquiry.id, profile.id, enquiry.customer_id);
+      await fetchEnquiries();
+    } catch {
+      setAcceptingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(enquiry.id);
+        return next;
+      });
+    }
   };
 
   const isLoading = jobsLoading || enqLoading;
@@ -71,9 +83,10 @@ export function JobsScreen() {
             renderItem={({ item }) => (
               <EnquiryCard
                 enquiry={item}
-                onPress={() => {}}
+                onPress={() => nav.navigate('EnquiryDetail', { enquiryId: item.id })}
                 showAcceptButton
                 onAccept={() => handleAccept(item)}
+                isAccepting={acceptingIds.has(item.id)}
               />
             )}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}

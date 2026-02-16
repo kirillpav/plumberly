@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { JobsScreen } from '@/screens/plumber/JobsScreen';
 import { JobDetailScreen } from '@/screens/plumber/JobDetailScreen';
+import { EnquiryDetailScreen } from '@/screens/plumber/EnquiryDetailScreen';
 import { DashboardScreen } from '@/screens/plumber/DashboardScreen';
 import { AccountScreen } from '@/screens/plumber/AccountScreen';
 import { EditProfileScreen } from '@/screens/plumber/EditProfileScreen';
@@ -68,6 +69,7 @@ export function PlumberTabNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="PlumberTabs" component={PlumberTabs} />
       <Stack.Screen name="JobDetail" component={JobDetailScreen} />
+      <Stack.Screen name="EnquiryDetail" component={EnquiryDetailScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="BankDetails" component={BankDetailsScreen} />
     </Stack.Navigator>

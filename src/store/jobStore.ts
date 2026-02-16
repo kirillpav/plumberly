@@ -39,6 +39,17 @@ export const useJobStore = create<JobState>((set, get) => ({
   },
 
   acceptJob: async (enquiryId, plumberId, customerId) => {
+    const { data: existing } = await supabase
+      .from('jobs')
+      .select('id')
+      .eq('enquiry_id', enquiryId)
+      .eq('plumber_id', plumberId)
+      .maybeSingle();
+
+    if (existing) {
+      throw new Error('You have already accepted this enquiry.');
+    }
+
     const { error } = await supabase.from('jobs').insert({
       enquiry_id: enquiryId,
       plumber_id: plumberId,

@@ -6,7 +6,7 @@ import { ChatbotScreen } from '@/screens/customer/ChatbotScreen';
 import { EnquiriesScreen } from '@/screens/customer/EnquiriesScreen';
 import { NewEnquiryScreen } from '@/screens/customer/NewEnquiryScreen';
 import { EnquiryDetailScreen } from '@/screens/customer/EnquiryDetailScreen';
-import { MapScreen } from '@/screens/customer/MapScreen';
+import { FindProsScreen } from '@/screens/customer/FindProsScreen';
 import { AccountScreen } from '@/screens/customer/AccountScreen';
 import { EditProfileScreen } from '@/screens/customer/EditProfileScreen';
 import type { CustomerTabParamList, CustomerStackParamList } from '@/types/navigation';
@@ -52,11 +52,12 @@ function CustomerTabs() {
         }}
       />
       <Tab.Screen
-        name="Map"
-        component={MapScreen}
+        name="FindPros"
+        component={FindProsScreen}
         options={{
+          tabBarLabel: 'Find Pros',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="map-outline" size={size} color={color} />
+            <Ionicons name="search-outline" size={size} color={color} />
           ),
         }}
       />

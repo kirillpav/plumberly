@@ -12,7 +12,7 @@ export type AuthStackParamList = {
 export type CustomerTabParamList = {
   Chatbot: undefined;
   Enquiries: undefined;
-  Map: undefined;
+  FindPros: undefined;
   Account: undefined;
 };
 
@@ -33,6 +33,7 @@ export type PlumberTabParamList = {
 export type PlumberStackParamList = {
   PlumberTabs: NavigatorScreenParams<PlumberTabParamList>;
   JobDetail: { jobId: string };
+  EnquiryDetail: { enquiryId: string };
   EditProfile: undefined;
   BankDetails: undefined;
 };

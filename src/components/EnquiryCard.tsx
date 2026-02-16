@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -20,9 +20,10 @@ interface Props {
   onPress: () => void;
   onAccept?: () => void;
   showAcceptButton?: boolean;
+  isAccepting?: boolean;
 }
 
-export function EnquiryCard({ enquiry, onPress, onAccept, showAcceptButton }: Props) {
+export function EnquiryCard({ enquiry, onPress, onAccept, showAcceptButton, isAccepting }: Props) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.header}>
@@ -63,8 +64,16 @@ export function EnquiryCard({ enquiry, onPress, onAccept, showAcceptButton }: Pr
         )}
 
         {showAcceptButton && onAccept && (
-          <TouchableOpacity style={styles.acceptBtn} onPress={onAccept}>
-            <Text style={styles.acceptText}>Accept</Text>
+          <TouchableOpacity
+            style={[styles.acceptBtn, isAccepting && styles.acceptBtnDisabled]}
+            onPress={onAccept}
+            disabled={isAccepting}
+          >
+            {isAccepting ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <Text style={styles.acceptText}>Accept</Text>
+            )}
           </TouchableOpacity>
         )}
       </View>
@@ -126,6 +135,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.button,
+    minWidth: 80,
+    alignItems: 'center' as const,
+  },
+  acceptBtnDisabled: {
+    opacity: 0.6,
   },
   acceptText: {
     ...Typography.label,
