@@ -6,7 +6,6 @@ import { ChatbotScreen } from '@/screens/customer/ChatbotScreen';
 import { EnquiriesScreen } from '@/screens/customer/EnquiriesScreen';
 import { NewEnquiryScreen } from '@/screens/customer/NewEnquiryScreen';
 import { EnquiryDetailScreen } from '@/screens/customer/EnquiryDetailScreen';
-import { FindProsScreen } from '@/screens/customer/FindProsScreen';
 import { AccountScreen } from '@/screens/customer/AccountScreen';
 import { EditProfileScreen } from '@/screens/customer/EditProfileScreen';
 import type { CustomerTabParamList, CustomerStackParamList } from '@/types/navigation';
@@ -48,16 +47,6 @@ function CustomerTabs() {
         options={{
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="list-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="FindPros"
-        component={FindProsScreen}
-        options={{
-          tabBarLabel: 'Find Pros',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="search-outline" size={size} color={color} />
           ),
         }}
       />

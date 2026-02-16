@@ -12,7 +12,6 @@ export type AuthStackParamList = {
 export type CustomerTabParamList = {
   Chatbot: undefined;
   Enquiries: undefined;
-  FindPros: undefined;
   Account: undefined;
 };
 

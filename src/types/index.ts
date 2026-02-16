@@ -7,6 +7,7 @@ export interface UserProfile {
   phone: string | null;
   avatar_url: string | null;
   role: UserRole;
+  push_token: string | null;
   created_at: string;
 }
 

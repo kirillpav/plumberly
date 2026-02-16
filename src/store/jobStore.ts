@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
+import { sendPushNotification } from '@/lib/notifications';
 import type { Job, JobStatus } from '@/types/index';
 
 interface JobState {
@@ -60,6 +61,22 @@ export const useJobStore = create<JobState>((set, get) => ({
 
     await supabase.from('enquiries').update({ status: 'accepted' }).eq('id', enquiryId);
     await get().fetchJobs(plumberId);
+
+    // Fetch plumber name for a friendlier notification
+    const { data: plumber } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', plumberId)
+      .single();
+
+    const plumberName = plumber?.full_name || 'A plumber';
+
+    sendPushNotification({
+      recipientUserId: customerId,
+      title: 'Enquiry Accepted',
+      body: `${plumberName} has accepted your enquiry and will be in touch soon.`,
+      data: { enquiryId, type: 'job_accepted' },
+    });
   },
 
   submitQuote: async (jobId, amount) => {
