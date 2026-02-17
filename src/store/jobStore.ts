@@ -9,8 +9,9 @@ interface JobState {
   fetchJobs: (plumberId?: string) => Promise<void>;
   acceptJob: (enquiryId: string, plumberId: string, customerId: string) => Promise<void>;
   submitQuote: (jobId: string, amount: number) => Promise<void>;
+  acceptQuote: (jobId: string) => Promise<void>;
+  confirmJobDone: (jobId: string, role: 'customer' | 'plumber') => Promise<void>;
   updateJobStatus: (jobId: string, status: JobStatus) => Promise<void>;
-  completeJob: (jobId: string) => Promise<void>;
   getByStatus: (status: JobStatus) => Job[];
   subscribeToChanges: (plumberId?: string) => () => void;
 }
@@ -85,6 +86,58 @@ export const useJobStore = create<JobState>((set, get) => ({
       .update({ quote_amount: amount, status: 'quoted' })
       .eq('id', jobId);
     if (error) throw error;
+
+    const job = get().jobs.find((j) => j.id === jobId);
+    if (job) {
+      const { data: plumber } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', job.plumber_id)
+        .single();
+
+      const plumberName = plumber?.full_name || 'Your plumber';
+
+      sendPushNotification({
+        recipientUserId: job.customer_id,
+        title: 'Quote Received',
+        body: `${plumberName} has sent you a quote of £${amount.toFixed(2)}. Open the app to review and accept.`,
+        data: { enquiryId: job.enquiry_id, jobId, type: 'quote_submitted' },
+      });
+    }
+
+    await get().fetchJobs();
+  },
+
+  acceptQuote: async (jobId) => {
+    const { error } = await supabase
+      .from('jobs')
+      .update({ status: 'in_progress' })
+      .eq('id', jobId);
+    if (error) throw error;
+
+    const job = get().jobs.find((j) => j.id === jobId);
+    if (job) {
+      await supabase
+        .from('enquiries')
+        .update({ status: 'in_progress' })
+        .eq('id', job.enquiry_id);
+
+      const { data: customer } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', job.customer_id)
+        .single();
+
+      const customerName = customer?.full_name || 'The customer';
+
+      sendPushNotification({
+        recipientUserId: job.plumber_id,
+        title: 'Quote Accepted — Job Started',
+        body: `${customerName} has accepted your quote. The job is now in progress.`,
+        data: { jobId, type: 'quote_accepted' },
+      });
+    }
+
     await get().fetchJobs();
   },
 
@@ -97,17 +150,52 @@ export const useJobStore = create<JobState>((set, get) => ({
     await get().fetchJobs();
   },
 
-  completeJob: async (jobId) => {
+  confirmJobDone: async (jobId, role) => {
+    const confirmField = role === 'customer' ? 'customer_confirmed' : 'plumber_confirmed';
+    const otherField = role === 'customer' ? 'plumber_confirmed' : 'customer_confirmed';
+
     const { error } = await supabase
       .from('jobs')
-      .update({ status: 'completed' })
+      .update({ [confirmField]: true })
       .eq('id', jobId);
     if (error) throw error;
 
-    const job = get().jobs.find((j) => j.id === jobId);
-    if (job) {
-      await supabase.from('enquiries').update({ status: 'completed' }).eq('id', job.enquiry_id);
+    const { data: freshJob } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('id', jobId)
+      .single();
+
+    if (freshJob && freshJob[confirmField] && freshJob[otherField]) {
+      await supabase
+        .from('jobs')
+        .update({ status: 'completed' })
+        .eq('id', jobId);
+      await supabase
+        .from('enquiries')
+        .update({ status: 'completed' })
+        .eq('id', freshJob.enquiry_id);
     }
+
+    if (freshJob && !freshJob[otherField]) {
+      const recipientId = role === 'customer' ? freshJob.plumber_id : freshJob.customer_id;
+
+      const { data: confirmer } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', role === 'customer' ? freshJob.customer_id : freshJob.plumber_id)
+        .single();
+
+      const confirmerName = confirmer?.full_name || (role === 'customer' ? 'The customer' : 'The plumber');
+
+      sendPushNotification({
+        recipientUserId: recipientId,
+        title: 'Job Completion Confirmation',
+        body: `${confirmerName} has confirmed the job is done. Please confirm on your end to complete it.`,
+        data: { jobId, type: 'completion_confirmation' },
+      });
+    }
+
     await get().fetchJobs();
   },
 

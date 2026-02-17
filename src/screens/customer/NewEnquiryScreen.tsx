@@ -33,6 +33,8 @@ const PROBLEM_TYPES = [
   'Other',
 ];
 
+const LONDON_REGIONS = ['North', 'East', 'South', 'West', 'Central'];
+
 const TIME_SLOTS = [
   'Morning (8am-12pm)',
   'Afternoon (12pm-5pm)',
@@ -51,10 +53,17 @@ export function NewEnquiryScreen() {
 
   const [problemType, setProblemType] = useState('');
   const [description, setDescription] = useState('');
+  const [region, setRegion] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
-  const [timeSlot, setTimeSlot] = useState('');
+  const [timeSlots, setTimeSlots] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const toggleTimeSlot = (slot: string) => {
+    setTimeSlots((prev) =>
+      prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot]
+    );
+  };
 
   const handleSubmit = async () => {
     if (!problemType) {
@@ -80,8 +89,9 @@ export function NewEnquiryScreen() {
         customerId: profile.id,
         title: problemType,
         description,
+        region: region || undefined,
         preferredDate: selectedDate || undefined,
-        preferredTime: timeSlot || undefined,
+        preferredTime: timeSlots.length > 0 ? timeSlots : undefined,
         images: uploadedUrls,
         chatbotTranscript: cleanTranscript,
       });
@@ -131,6 +141,21 @@ export function NewEnquiryScreen() {
             style={{ height: 100, textAlignVertical: 'top' }}
           />
 
+          <Text style={styles.label}>Area in London</Text>
+          <View style={styles.chips}>
+            {LONDON_REGIONS.map((r) => (
+              <TouchableOpacity
+                key={r}
+                style={[styles.chip, region === r && styles.chipActive]}
+                onPress={() => setRegion(region === r ? '' : r)}
+              >
+                <Text style={[styles.chipText, region === r && styles.chipTextActive]}>
+                  {r} London
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           <Text style={styles.label}>Preferred Date</Text>
           <Calendar
             onDayPress={(day: { dateString: string }) => setSelectedDate(day.dateString)}
@@ -150,17 +175,20 @@ export function NewEnquiryScreen() {
             style={styles.calendar}
           />
 
-          <Text style={styles.label}>Preferred Time</Text>
+          <Text style={styles.label}>Availability (select all that apply)</Text>
           <View style={styles.chips}>
-            {TIME_SLOTS.map((t) => (
-              <TouchableOpacity
-                key={t}
-                style={[styles.chip, timeSlot === t && styles.chipActive]}
-                onPress={() => setTimeSlot(t)}
-              >
-                <Text style={[styles.chipText, timeSlot === t && styles.chipTextActive]}>{t}</Text>
-              </TouchableOpacity>
-            ))}
+            {TIME_SLOTS.map((t) => {
+              const selected = timeSlots.includes(t);
+              return (
+                <TouchableOpacity
+                  key={t}
+                  style={[styles.chip, selected && styles.chipActive]}
+                  onPress={() => toggleTimeSlot(t)}
+                >
+                  <Text style={[styles.chipText, selected && styles.chipTextActive]}>{t}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           <Text style={styles.label}>Photos (optional)</Text>

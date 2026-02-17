@@ -35,8 +35,9 @@ export interface Enquiry {
   title: string;
   description: string;
   status: EnquiryStatus;
+  region: string | null;
   preferred_date: string | null;
-  preferred_time: string | null;
+  preferred_time: string[];
   images: string[];
   chatbot_transcript: ChatMessage[] | null;
   created_at: string;
@@ -55,6 +56,8 @@ export interface Job {
   quote_amount: number | null;
   scheduled_date: string | null;
   notes: string | null;
+  customer_confirmed: boolean;
+  plumber_confirmed: boolean;
   created_at: string;
   updated_at: string;
   enquiry?: Enquiry;

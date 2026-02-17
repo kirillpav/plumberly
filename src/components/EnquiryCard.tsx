@@ -47,6 +47,13 @@ export function EnquiryCard({ enquiry, onPress, onAccept, showAcceptButton, isAc
       ) : null}
 
       <View style={styles.footer}>
+        {enquiry.region && (
+          <View style={styles.meta}>
+            <Ionicons name="location-outline" size={14} color={Colors.grey500} />
+            <Text style={styles.metaText}>{enquiry.region}</Text>
+          </View>
+        )}
+
         <View style={styles.meta}>
           <Ionicons name="calendar-outline" size={14} color={Colors.grey500} />
           <Text style={styles.metaText}>

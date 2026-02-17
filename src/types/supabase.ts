@@ -54,8 +54,9 @@ export interface Database {
           title: string;
           description: string;
           status: 'new' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
+          region: string | null;
           preferred_date: string | null;
-          preferred_time: string | null;
+          preferred_time: string[];
           images: string[];
           chatbot_transcript: Json | null;
           created_at: string;
@@ -67,8 +68,9 @@ export interface Database {
           title: string;
           description: string;
           status?: 'new' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
+          region?: string | null;
           preferred_date?: string | null;
-          preferred_time?: string | null;
+          preferred_time?: string[];
           images?: string[];
           chatbot_transcript?: Json | null;
           created_at?: string;
@@ -86,6 +88,8 @@ export interface Database {
           quote_amount: number | null;
           scheduled_date: string | null;
           notes: string | null;
+          customer_confirmed: boolean;
+          plumber_confirmed: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -98,6 +102,8 @@ export interface Database {
           quote_amount?: number | null;
           scheduled_date?: string | null;
           notes?: string | null;
+          customer_confirmed?: boolean;
+          plumber_confirmed?: boolean;
           created_at?: string;
           updated_at?: string;
         };

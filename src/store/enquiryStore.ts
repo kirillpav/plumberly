@@ -10,8 +10,9 @@ interface EnquiryState {
     customerId: string;
     title: string;
     description: string;
+    region?: string;
     preferredDate?: string;
-    preferredTime?: string;
+    preferredTime?: string[];
     images?: string[];
     chatbotTranscript?: ChatMessage[];
   }) => Promise<void>;
@@ -47,14 +48,15 @@ export const useEnquiryStore = create<EnquiryState>((set, get) => ({
     }
   },
 
-  createEnquiry: async ({ customerId, title, description, preferredDate, preferredTime, images, chatbotTranscript }) => {
+  createEnquiry: async ({ customerId, title, description, region, preferredDate, preferredTime, images, chatbotTranscript }) => {
     const { error } = await supabase.from('enquiries').insert({
       customer_id: customerId,
       title,
       description,
       status: 'new',
+      region: region ?? null,
       preferred_date: preferredDate ?? null,
-      preferred_time: preferredTime ?? null,
+      preferred_time: preferredTime ?? [],
       images: images ?? [],
       chatbot_transcript: chatbotTranscript ? JSON.parse(JSON.stringify(chatbotTranscript)) : null,
     });

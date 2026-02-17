@@ -85,8 +85,9 @@ create table public.enquiries (
   description text not null default '',
   status text not null default 'new'
     check (status in ('new', 'accepted', 'in_progress', 'completed', 'cancelled')),
+  region text,
   preferred_date date,
-  preferred_time text,
+  preferred_time text[] default '{}',
   images text[] default '{}',
   chatbot_transcript jsonb,
   created_at timestamptz default now() not null,
@@ -120,6 +121,8 @@ create table public.jobs (
   quote_amount numeric(10,2),
   scheduled_date date,
   notes text,
+  customer_confirmed boolean default false not null,
+  plumber_confirmed boolean default false not null,
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null
 );
@@ -137,6 +140,9 @@ create policy "Plumbers can create jobs" on public.jobs
 
 create policy "Plumbers can update own jobs" on public.jobs
   for update using (auth.uid() = plumber_id);
+
+create policy "Customers can update own jobs" on public.jobs
+  for update using (auth.uid() = customer_id);
 
 -- =========================================================
 -- PROFILES POLICY THAT DEPENDS ON JOBS (moved here)

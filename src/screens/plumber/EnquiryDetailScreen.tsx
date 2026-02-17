@@ -116,16 +116,22 @@ export function EnquiryDetailScreen() {
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Details</Text>
+          {enquiry.region && (
+            <View style={styles.detailRow}>
+              <Ionicons name="location-outline" size={16} color={Colors.grey500} />
+              <Text style={styles.detailText}>Area: {enquiry.region} London</Text>
+            </View>
+          )}
           {enquiry.preferred_date && (
             <View style={styles.detailRow}>
               <Ionicons name="calendar-outline" size={16} color={Colors.grey500} />
               <Text style={styles.detailText}>Preferred date: {formatDate(enquiry.preferred_date)}</Text>
             </View>
           )}
-          {enquiry.preferred_time && (
+          {enquiry.preferred_time?.length > 0 && (
             <View style={styles.detailRow}>
               <Ionicons name="time-outline" size={16} color={Colors.grey500} />
-              <Text style={styles.detailText}>Preferred time: {enquiry.preferred_time}</Text>
+              <Text style={styles.detailText}>Availability: {enquiry.preferred_time.join(', ')}</Text>
             </View>
           )}
           <View style={styles.detailRow}>
@@ -148,9 +154,11 @@ export function EnquiryDetailScreen() {
         {transcript && transcript.length > 0 && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Chat Transcript</Text>
-            {transcript.map((msg) => (
-              <ChatBubble key={msg.id} content={msg.content} role={msg.role as 'user' | 'assistant'} />
-            ))}
+            <View style={styles.transcriptContainer}>
+              {transcript.map((msg) => (
+                <ChatBubble key={msg.id} content={msg.content} role={msg.role as 'user' | 'assistant'} compact />
+              ))}
+            </View>
           </View>
         )}
 
@@ -183,6 +191,13 @@ const styles = StyleSheet.create({
   detailText: { ...Typography.bodySmall, color: Colors.grey500 },
   imageRow: { flexDirection: 'row', gap: Spacing.md, flexWrap: 'wrap' },
   image: { width: 100, height: 100, borderRadius: BorderRadius.md },
+  transcriptContainer: {
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
+    gap: 2,
+  },
   acceptedBanner: {
     backgroundColor: Colors.success,
     padding: Spacing.base,

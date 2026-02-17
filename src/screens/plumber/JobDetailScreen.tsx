@@ -9,12 +9,13 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
 import { Avatar } from '@/components/shared/Avatar';
 import { InputField } from '@/components/shared/InputField';
 import { PrimaryButton } from '@/components/shared/PrimaryButton';
-import { SecondaryButton } from '@/components/shared/SecondaryButton';
 import { ChatBubble } from '@/components/ChatBubble';
+import { CompletionIndicator } from '@/components/CompletionIndicator';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { useJobStore } from '@/store/jobStore';
 import { supabase } from '@/lib/supabase';
@@ -30,7 +31,7 @@ export function JobDetailScreen() {
   const nav = useNavigation();
   const route = useRoute<RouteProp<PlumberStackParamList, 'JobDetail'>>();
   const { jobId } = route.params;
-  const { submitQuote, updateJobStatus, completeJob } = useJobStore();
+  const { submitQuote, confirmJobDone } = useJobStore();
 
   const [job, setJob] = useState<Job | null>(null);
   const [enquiry, setEnquiry] = useState<Enquiry | null>(null);
@@ -39,64 +40,77 @@ export function JobDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      const { data: j } = await supabase
-        .from('jobs')
+  const loadData = async () => {
+    const { data: j } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('id', jobId)
+      .single();
+
+    if (j) {
+      setJob(j as unknown as Job);
+      const { data: enq } = await supabase
+        .from('enquiries')
         .select('*')
-        .eq('id', jobId)
+        .eq('id', j.enquiry_id)
         .single();
+      setEnquiry(enq as unknown as Enquiry);
 
-      if (j) {
-        setJob(j as unknown as Job);
-        const { data: enq } = await supabase
-          .from('enquiries')
-          .select('*')
-          .eq('id', j.enquiry_id)
-          .single();
-        setEnquiry(enq as unknown as Enquiry);
-
-        const { data: cust } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', j.customer_id)
-          .single();
-        setCustomer(cust as unknown as UserProfile);
-      }
-      setLoading(false);
+      const { data: cust } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', j.customer_id)
+        .single();
+      setCustomer(cust as unknown as UserProfile);
     }
-    load();
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadData();
+
+    const channel = supabase
+      .channel(`job-detail-${jobId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'jobs',
+        filter: `id=eq.${jobId}`,
+      }, () => {
+        loadData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [jobId]);
 
-  const handleAction = async () => {
+  const handleSubmitQuote = async () => {
+    if (!job) return;
+    const amount = parseFloat(quoteInput);
+    if (isNaN(amount) || amount <= 0) {
+      Alert.alert('Invalid', 'Please enter a valid quote amount.');
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await submitQuote(job.id, amount);
+      setJob({ ...job, status: 'quoted', quote_amount: amount });
+      Alert.alert('Quote Sent', 'The customer has been notified. You will be updated when they respond.');
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmDone = async () => {
     if (!job) return;
     setActionLoading(true);
     try {
-      switch (job.status) {
-        case 'pending': {
-          const amount = parseFloat(quoteInput);
-          if (isNaN(amount) || amount <= 0) {
-            Alert.alert('Invalid', 'Please enter a valid quote amount.');
-            setActionLoading(false);
-            return;
-          }
-          await submitQuote(job.id, amount);
-          setJob({ ...job, status: 'quoted', quote_amount: amount });
-          break;
-        }
-        case 'quoted':
-          await updateJobStatus(job.id, 'accepted');
-          setJob({ ...job, status: 'accepted' });
-          break;
-        case 'accepted':
-          await updateJobStatus(job.id, 'in_progress');
-          setJob({ ...job, status: 'in_progress' });
-          break;
-        case 'in_progress':
-          await completeJob(job.id);
-          setJob({ ...job, status: 'completed' });
-          break;
-      }
+      await confirmJobDone(job.id, 'plumber');
+      setJob({ ...job, plumber_confirmed: true });
     } catch (err: any) {
       Alert.alert('Error', err.message);
     } finally {
@@ -109,12 +123,7 @@ export function JobDetailScreen() {
 
   const transcript = enquiry?.chatbot_transcript as ChatMessage[] | null;
 
-  const actionLabels: Record<string, string> = {
-    pending: 'Submit Quote',
-    quoted: 'Start Work',
-    accepted: 'Start Work',
-    in_progress: 'Mark Complete',
-  };
+  const showCompletionSection = job.status === 'in_progress' || job.status === 'completed';
 
   return (
     <ScreenWrapper>
@@ -175,39 +184,72 @@ export function JobDetailScreen() {
         {transcript && transcript.length > 0 && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Chat History</Text>
-            {transcript.map((msg) => (
-              <ChatBubble
-                key={msg.id}
-                content={msg.content}
-                role={msg.role as 'user' | 'assistant'}
-              />
-            ))}
+            <View style={styles.transcriptContainer}>
+              {transcript.map((msg) => (
+                <ChatBubble
+                  key={msg.id}
+                  content={msg.content}
+                  role={msg.role as 'user' | 'assistant'}
+                  compact
+                />
+              ))}
+            </View>
           </View>
         )}
 
         {/* Quote Input */}
         {job.status === 'pending' && (
-          <InputField
-            label="Quote Amount (GBP)"
-            value={quoteInput}
-            onChangeText={setQuoteInput}
-            keyboardType="decimal-pad"
-            placeholder="e.g. 150.00"
-          />
+          <>
+            <InputField
+              label="Quote Amount (GBP)"
+              value={quoteInput}
+              onChangeText={setQuoteInput}
+              keyboardType="decimal-pad"
+              placeholder="e.g. 150.00"
+            />
+            <PrimaryButton
+              title="Submit Quote"
+              onPress={handleSubmitQuote}
+              loading={actionLoading}
+            />
+          </>
         )}
 
-        {/* Action Button */}
-        {actionLabels[job.status] && (
-          <PrimaryButton
-            title={actionLabels[job.status]}
-            onPress={handleAction}
-            loading={actionLoading}
-          />
+        {/* Waiting for customer banner */}
+        {(job.status === 'quoted' || job.status === 'accepted') && (
+          <View style={styles.waitingBanner}>
+            <Ionicons name="hourglass-outline" size={20} color={Colors.primary} />
+            <Text style={styles.waitingText}>
+              {job.status === 'quoted'
+                ? 'Quote sent — waiting for the customer to accept'
+                : 'Customer accepted — job starting soon'}
+            </Text>
+          </View>
         )}
 
-        {job.status === 'completed' && (
-          <View style={styles.completedBanner}>
-            <Text style={styles.completedText}>Job Completed</Text>
+        {/* Completion confirmation */}
+        {showCompletionSection && (
+          <View style={styles.completionSection}>
+            <CompletionIndicator
+              customerConfirmed={job.customer_confirmed}
+              plumberConfirmed={job.plumber_confirmed}
+              viewerRole="plumber"
+            />
+            {job.status === 'in_progress' && !job.plumber_confirmed && (
+              <PrimaryButton
+                title="Confirm Job Done"
+                onPress={handleConfirmDone}
+                loading={actionLoading}
+              />
+            )}
+            {job.status === 'in_progress' && job.plumber_confirmed && !job.customer_confirmed && (
+              <View style={styles.waitingBanner}>
+                <Ionicons name="hourglass-outline" size={18} color={Colors.primary} />
+                <Text style={styles.waitingText}>
+                  Waiting for the customer to confirm completion
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -240,12 +282,25 @@ const styles = StyleSheet.create({
   statusText: { ...Typography.caption, color: Colors.grey500, marginTop: Spacing.xs, textTransform: 'capitalize' },
   imageRow: { flexDirection: 'row', gap: Spacing.md },
   image: { width: 100, height: 100, borderRadius: BorderRadius.md },
-  completedBanner: {
-    backgroundColor: Colors.statusCompleted,
+  waitingBanner: {
+    backgroundColor: Colors.lightBlue,
     padding: Spacing.base,
     borderRadius: BorderRadius.card,
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.base,
   },
-  completedText: { ...Typography.button, color: Colors.white },
+  waitingText: { ...Typography.bodySmall, color: Colors.primary, flex: 1 },
+  completionSection: {
+    gap: Spacing.md,
+  },
+  transcriptContainer: {
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
+    gap: 2,
+  },
   spacer: { height: Spacing.xxl },
 });

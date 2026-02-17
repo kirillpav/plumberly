@@ -55,6 +55,7 @@ export function JobsScreen() {
     try {
       await acceptJob(enquiry.id, profile.id, enquiry.customer_id);
       await fetchEnquiries();
+      setActiveIndex(1);
     } catch {
       setAcceptingIds((prev) => {
         const next = new Set(prev);
