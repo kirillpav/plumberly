@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
@@ -17,7 +18,7 @@ export function ChatBubble({ content, role, compact }: Props) {
     <View style={[styles.row, isUser && styles.rowUser]}>
       {!isUser && (
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>AI</Text>
+          <Ionicons name="water" size={13} color={Colors.white} />
         </View>
       )}
       <View
@@ -43,33 +44,32 @@ export function ChatBubble({ content, role, compact }: Props) {
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.xs,
+    alignItems: 'flex-end',
+    paddingHorizontal: Spacing.base,
+    marginBottom: Spacing.sm,
   },
   rowUser: {
     justifyContent: 'flex-end',
   },
   avatar: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: Colors.grey300,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: Spacing.sm,
-    marginTop: 2,
-  },
-  avatarText: {
-    ...Typography.caption,
-    fontSize: 10,
-    color: Colors.grey700,
-    fontWeight: '600',
   },
   bubble: {
-    maxWidth: '80%',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    maxWidth: '75%',
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.md,
+    borderRadius: 18,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
   },
   bubbleCompact: {
     paddingHorizontal: Spacing.sm,
@@ -77,15 +77,15 @@ const styles = StyleSheet.create({
   },
   bubbleUser: {
     backgroundColor: Colors.primary,
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 6,
   },
   bubbleAssistant: {
-    backgroundColor: Colors.grey100,
-    borderBottomLeftRadius: 4,
+    backgroundColor: Colors.white,
+    borderBottomLeftRadius: 6,
   },
   text: {
     ...Typography.bodySmall,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   textCompact: {
     ...Typography.caption,
@@ -95,6 +95,6 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   textAssistant: {
-    color: Colors.black,
+    color: Colors.grey900,
   },
 });

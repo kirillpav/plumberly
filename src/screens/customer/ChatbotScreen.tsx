@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
 import { ChatBubble } from '@/components/ChatBubble';
+import { TypingIndicator } from '@/components/TypingIndicator';
 import { PrimaryButton } from '@/components/shared/PrimaryButton';
 import { useChatStore } from '@/store/chatStore';
 import { Colors } from '@/constants/colors';
@@ -29,15 +30,15 @@ import type { ChatMessage } from '@/types/index';
 type Nav = NativeStackNavigationProp<CustomerStackParamList>;
 
 const QUICK_ACTIONS = [
-  { label: 'Leak', message: "I have a water leak in my home." },
-  { label: 'Drain', message: "My drain is blocked or slow." },
-  { label: 'Pressure', message: "I have low water pressure." },
-  { label: 'Fixture', message: "I need a fixture installed or repaired." },
+  { label: 'Leak', icon: 'water-outline' as const, message: "I have a water leak in my home." },
+  { label: 'Drain', icon: 'funnel-outline' as const, message: "My drain is blocked or slow." },
+  { label: 'Pressure', icon: 'speedometer-outline' as const, message: "I have low water pressure." },
+  { label: 'Fixture', icon: 'build-outline' as const, message: "I need a fixture installed or repaired." },
 ];
 
 export function ChatbotScreen() {
   const nav = useNavigation<Nav>();
-  const { messages, isStreaming, sendMessage, getTranscriptJSON } = useChatStore();
+  const { messages, isStreaming, sendMessage, clearChat, getTranscriptJSON } = useChatStore();
   const [input, setInput] = useState('');
   const [pendingImages, setPendingImages] = useState<{ uri: string; base64: string }[]>([]);
   const flatListRef = useRef<FlatList>(null);
@@ -88,6 +89,14 @@ export function ChatbotScreen() {
     sendMessage(msg || 'What do you see in this image?', imageDataUris.length > 0 ? imageDataUris : undefined);
   };
 
+  const handleNewChat = () => {
+    if (isStreaming) return;
+    Alert.alert('New Chat', 'Start a fresh conversation?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'New Chat', onPress: () => { clearChat(); setPendingImages([]); setInput(''); } },
+    ]);
+  };
+
   const handleBook = () => {
     nav.navigate('NewEnquiry', { transcript: getTranscriptJSON() });
   };
@@ -113,15 +122,33 @@ export function ChatbotScreen() {
         keyboardVerticalOffset={88}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Plumbing Assistant</Text>
+          <View style={styles.headerIcon}>
+            <Ionicons name="water" size={16} color={Colors.white} />
+          </View>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Plumbing Assistant</Text>
+            <Text style={styles.subtitle}>AI-powered diagnostics</Text>
+          </View>
+          {messages.length > 0 && (
+            <TouchableOpacity
+              style={styles.newChatBtn}
+              onPress={handleNewChat}
+              activeOpacity={0.6}
+              disabled={isStreaming}
+            >
+              <Ionicons name="create-outline" size={20} color={isStreaming ? Colors.grey300 : Colors.primary} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {messages.length === 0 ? (
           <View style={styles.empty}>
-            <Ionicons name="chatbubble-ellipses" size={48} color={Colors.grey300} />
+            <View style={styles.emptyIconWrap}>
+              <Ionicons name="chatbubble-ellipses-outline" size={40} color={Colors.primary} />
+            </View>
             <Text style={styles.emptyTitle}>How can we help?</Text>
             <Text style={styles.emptySubtitle}>
-              Describe your plumbing issue or tap a quick action below
+              Describe your plumbing issue or tap a topic below
             </Text>
             <View style={styles.quickActions}>
               {QUICK_ACTIONS.map((qa) => (
@@ -129,7 +156,9 @@ export function ChatbotScreen() {
                   key={qa.label}
                   style={styles.quickBtn}
                   onPress={() => handleSend(qa.message)}
+                  activeOpacity={0.7}
                 >
+                  <Ionicons name={qa.icon} size={18} color={Colors.primary} />
                   <Text style={styles.quickText}>{qa.label}</Text>
                 </TouchableOpacity>
               ))}
@@ -143,6 +172,7 @@ export function ChatbotScreen() {
             keyExtractor={(m) => m.id}
             contentContainerStyle={styles.list}
             onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+            ListFooterComponent={isStreaming ? <TypingIndicator /> : null}
           />
         )}
 
@@ -168,34 +198,41 @@ export function ChatbotScreen() {
           </View>
         )}
 
-        <View style={styles.inputRow}>
+        <View style={styles.inputBar}>
           <TouchableOpacity
             style={styles.attachBtn}
             onPress={pickImage}
             disabled={isStreaming}
+            activeOpacity={0.6}
           >
             <Ionicons
               name="image-outline"
-              size={24}
-              color={isStreaming ? Colors.grey300 : Colors.grey600}
+              size={22}
+              color={isStreaming ? Colors.grey300 : Colors.grey500}
             />
           </TouchableOpacity>
-          <TextInput
-            style={styles.input}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Type your message..."
-            placeholderTextColor={Colors.grey500}
-            multiline
-            maxLength={500}
-            editable={!isStreaming}
-          />
+          <View style={styles.inputWrap}>
+            <TextInput
+              style={styles.input}
+              value={input}
+              onChangeText={setInput}
+              placeholder="Type a message..."
+              placeholderTextColor={Colors.grey300}
+              multiline
+              maxLength={500}
+              editable={!isStreaming}
+            />
+          </View>
           <TouchableOpacity
-            style={[styles.sendBtn, (!input.trim() && pendingImages.length === 0 || isStreaming) && styles.sendDisabled]}
+            style={[
+              styles.sendBtn,
+              ((!input.trim() && pendingImages.length === 0) || isStreaming) && styles.sendDisabled,
+            ]}
             onPress={() => handleSend()}
             disabled={(!input.trim() && pendingImages.length === 0) || isStreaming}
+            activeOpacity={0.7}
           >
-            <Ionicons name="send" size={20} color={Colors.white} />
+            <Ionicons name="arrow-up" size={20} color={Colors.white} />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -204,32 +241,104 @@ export function ChatbotScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
+  flex: { flex: 1, backgroundColor: Colors.background },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.grey100,
     backgroundColor: Colors.white,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.grey100,
   },
-  title: { ...Typography.h2, color: Colors.black },
-  list: { paddingVertical: Spacing.md },
+  headerIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerText: {
+    flex: 1,
+  },
+  title: {
+    ...Typography.label,
+    fontWeight: '700',
+    color: Colors.grey900,
+  },
+  subtitle: {
+    ...Typography.caption,
+    color: Colors.grey500,
+    marginTop: 1,
+  },
+  newChatBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: Colors.lightBlue,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  list: {
+    paddingTop: Spacing.base,
+    paddingBottom: Spacing.sm,
+  },
   empty: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: Spacing.xxl,
   },
-  emptyTitle: { ...Typography.h2, color: Colors.grey700, marginTop: Spacing.base },
-  emptySubtitle: { ...Typography.bodySmall, color: Colors.grey500, textAlign: 'center', marginTop: Spacing.sm },
-  quickActions: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginTop: Spacing.xl, justifyContent: 'center' },
-  quickBtn: {
+  emptyIconWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: Colors.lightBlue,
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.button,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.base,
   },
-  quickText: { ...Typography.label, color: Colors.primary },
+  emptyTitle: {
+    ...Typography.h2,
+    fontWeight: '700',
+    color: Colors.grey900,
+  },
+  emptySubtitle: {
+    ...Typography.bodySmall,
+    color: Colors.grey500,
+    textAlign: 'center',
+    marginTop: Spacing.sm,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginTop: Spacing.xl,
+    justifyContent: 'center',
+  },
+  quickBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.card,
+    borderWidth: 1,
+    borderColor: Colors.grey100,
+    shadowColor: Colors.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  quickText: {
+    ...Typography.label,
+    fontWeight: '600',
+    color: Colors.grey700,
+  },
   ctaRow: {
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.sm,
@@ -238,7 +347,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.sm,
     paddingHorizontal: Spacing.base,
-    marginTop: -Spacing.sm,
+    marginTop: -Spacing.xs,
     marginBottom: Spacing.sm,
   },
   messageImage: {
@@ -249,10 +358,10 @@ const styles = StyleSheet.create({
   pendingRow: {
     flexDirection: 'row',
     gap: Spacing.sm,
-    paddingHorizontal: Spacing.md,
+    paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.sm,
     backgroundColor: Colors.white,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.grey100,
   },
   pendingThumb: {
@@ -270,38 +379,43 @@ const styles = StyleSheet.create({
     top: 1,
     right: 1,
   },
-  inputRow: {
+  inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    padding: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.grey100,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
     backgroundColor: Colors.white,
-    gap: Spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.grey100,
+    gap: Spacing.xs,
   },
   attachBtn: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  input: {
+  inputWrap: {
     flex: 1,
-    backgroundColor: Colors.inputBg,
-    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.background,
+    borderRadius: 20,
     paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.md,
-    maxHeight: 100,
+    justifyContent: 'center',
+  },
+  input: {
     ...Typography.body,
-    color: Colors.black,
+    color: Colors.grey900,
+    paddingVertical: Platform.OS === 'ios' ? 10 : 8,
+    maxHeight: 100,
   },
   sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: Colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 2,
   },
-  sendDisabled: { opacity: 0.5 },
+  sendDisabled: { opacity: 0.35 },
 });
