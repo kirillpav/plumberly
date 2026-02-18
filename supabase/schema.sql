@@ -120,6 +120,7 @@ create table public.jobs (
     check (status in ('pending', 'quoted', 'accepted', 'in_progress', 'completed', 'cancelled')),
   quote_amount numeric(10,2),
   scheduled_date date,
+  scheduled_time text,
   notes text,
   customer_confirmed boolean default false not null,
   plumber_confirmed boolean default false not null,
@@ -212,6 +213,12 @@ drop trigger if exists jobs_updated_at on public.jobs;
 create trigger jobs_updated_at
   before update on public.jobs
   for each row execute procedure public.handle_updated_at();
+
+-- =========================================================
+-- ENABLE REALTIME
+-- =========================================================
+alter publication supabase_realtime add table public.enquiries;
+alter publication supabase_realtime add table public.jobs;
 
 -- =========================================================
 -- STORAGE BUCKET FOR ENQUIRY IMAGES (safer re-run)

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
@@ -18,8 +18,8 @@ import type { EnquiryStatus, Enquiry } from '@/types/index';
 import { Text } from 'react-native';
 
 type Nav = NativeStackNavigationProp<CustomerStackParamList>;
-const SEGMENTS = ['New', 'Accepted', 'Completed'];
-const STATUS_MAP: EnquiryStatus[] = ['new', 'accepted', 'completed'];
+const SEGMENTS = ['New', 'Active', 'Completed'];
+const ACTIVE_STATUSES: EnquiryStatus[] = ['accepted', 'in_progress'];
 
 export function EnquiriesScreen() {
   const nav = useNavigation<Nav>();
@@ -30,12 +30,26 @@ export function EnquiriesScreen() {
   useEffect(() => {
     if (profile?.id) {
       fetchEnquiries(profile.id);
-      const unsub = subscribeToChanges(profile.id);
-      return unsub;
+      const unsubEnquiries = subscribeToChanges(profile.id);
+      return () => {
+        unsubEnquiries();
+      };
     }
   }, [profile?.id]);
 
-  const filtered = enquiries.filter((e) => e.status === STATUS_MAP[activeIndex]);
+  useFocusEffect(
+    useCallback(() => {
+      if (profile?.id) {
+        fetchEnquiries(profile.id);
+      }
+    }, [profile?.id])
+  );
+
+  const filtered = enquiries.filter((e) => {
+    if (activeIndex === 0) return e.status === 'new';
+    if (activeIndex === 1) return ACTIVE_STATUSES.includes(e.status);
+    return e.status === 'completed';
+  });
 
   const renderItem = useCallback(
     ({ item }: { item: Enquiry }) => (

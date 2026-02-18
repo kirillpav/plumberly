@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, RefreshControl } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
 import { SegmentedControl } from '@/components/shared/SegmentedControl';
@@ -24,18 +24,31 @@ export function JobsScreen() {
   const nav = useNavigation<Nav>();
   const profile = useAuthStore((s) => s.profile);
   const { jobs, isLoading: jobsLoading, fetchJobs, acceptJob, subscribeToChanges } = useJobStore();
-  const { enquiries, isLoading: enqLoading, fetchEnquiries } = useEnquiryStore();
+  const { enquiries, isLoading: enqLoading, fetchEnquiries, subscribeToChanges: subscribeEnquiries } = useEnquiryStore();
   const [activeIndex, setActiveIndex] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (profile?.id) {
       fetchJobs(profile.id);
-      fetchEnquiries(); // all enquiries for plumber
-      const unsub = subscribeToChanges(profile.id);
-      return unsub;
+      fetchEnquiries();
+      const unsubJobs = subscribeToChanges(profile.id);
+      const unsubEnquiries = subscribeEnquiries();
+      return () => {
+        unsubJobs();
+        unsubEnquiries();
+      };
     }
   }, [profile?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (profile?.id) {
+        fetchJobs(profile.id);
+        fetchEnquiries();
+      }
+    }, [profile?.id])
+  );
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -43,7 +56,10 @@ export function JobsScreen() {
     setRefreshing(false);
   };
 
-  const newEnquiries = enquiries.filter((e) => e.status === 'new');
+  const myEnquiryIds = new Set(jobs.map((j) => j.enquiry_id));
+  const newEnquiries = enquiries.filter(
+    (e) => (e.status === 'new' || e.status === 'accepted') && !myEnquiryIds.has(e.id)
+  );
   const existingJobs = jobs.filter((j) => ['pending', 'quoted', 'accepted', 'in_progress'].includes(j.status));
   const completedJobs = jobs.filter((j) => j.status === 'completed');
 

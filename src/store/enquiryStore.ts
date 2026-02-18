@@ -82,8 +82,12 @@ export const useEnquiryStore = create<EnquiryState>((set, get) => ({
   },
 
   subscribeToChanges: (customerId) => {
+    const channelName = customerId
+      ? `enquiries-changes-${customerId}`
+      : `enquiries-changes-all-${Date.now()}`;
+
     const channel = supabase
-      .channel('enquiries-changes')
+      .channel(channelName)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',

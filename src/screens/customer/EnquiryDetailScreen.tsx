@@ -66,8 +66,8 @@ export function EnquiryDetailScreen() {
   useEffect(() => {
     loadData();
 
-    const channel = supabase
-      .channel(`job-updates-${enquiryId}`)
+    const jobChannel = supabase
+      .channel(`cust-enq-jobs-${enquiryId}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -78,8 +78,21 @@ export function EnquiryDetailScreen() {
       })
       .subscribe();
 
+    const enqChannel = supabase
+      .channel(`cust-enq-detail-${enquiryId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'enquiries',
+        filter: `id=eq.${enquiryId}`,
+      }, () => {
+        loadData();
+      })
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(jobChannel);
+      supabase.removeChannel(enqChannel);
     };
   }, [enquiryId]);
 
@@ -202,6 +215,12 @@ export function EnquiryDetailScreen() {
                   <Text style={styles.quoteTitle}>Quote Received</Text>
                 </View>
                 <Text style={styles.quotePriceDisplay}>{formatCurrency(job.quote_amount)}</Text>
+                {job.scheduled_time && (
+                  <View style={styles.quoteTimeBadge}>
+                    <Ionicons name="time-outline" size={14} color={Colors.primary} />
+                    <Text style={styles.quoteTimeText}>Preferred time: {job.scheduled_time}</Text>
+                  </View>
+                )}
                 <Text style={styles.quoteSubtext}>
                   Review the quote above. Accept to start the job or decline to cancel.
                 </Text>
@@ -320,6 +339,18 @@ const styles = StyleSheet.create({
   quoteHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
   quoteTitle: { ...Typography.h3, color: Colors.primary },
   quotePriceDisplay: { ...Typography.h1, color: Colors.black, marginBottom: Spacing.sm },
+  quoteTimeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.white,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    alignSelf: 'flex-start',
+    marginBottom: Spacing.sm,
+  },
+  quoteTimeText: { ...Typography.bodySmall, color: Colors.primary, fontWeight: '500' },
   quoteSubtext: { ...Typography.bodySmall, color: Colors.grey700, marginBottom: Spacing.base },
   quoteButtons: { flexDirection: 'row', gap: Spacing.md },
   quoteButtonWrap: { flex: 1 },

@@ -8,7 +8,7 @@ interface JobState {
   isLoading: boolean;
   fetchJobs: (plumberId?: string) => Promise<void>;
   acceptJob: (enquiryId: string, plumberId: string, customerId: string) => Promise<void>;
-  submitQuote: (jobId: string, amount: number) => Promise<void>;
+  submitQuote: (jobId: string, amount: number, scheduledTime?: string) => Promise<void>;
   acceptQuote: (jobId: string) => Promise<void>;
   confirmJobDone: (jobId: string, role: 'customer' | 'plumber') => Promise<void>;
   updateJobStatus: (jobId: string, status: JobStatus) => Promise<void>;
@@ -80,10 +80,14 @@ export const useJobStore = create<JobState>((set, get) => ({
     });
   },
 
-  submitQuote: async (jobId, amount) => {
+  submitQuote: async (jobId, amount, scheduledTime) => {
     const { error } = await supabase
       .from('jobs')
-      .update({ quote_amount: amount, status: 'quoted' })
+      .update({
+        quote_amount: amount,
+        status: 'quoted',
+        ...(scheduledTime ? { scheduled_time: scheduledTime } : {}),
+      })
       .eq('id', jobId);
     if (error) throw error;
 
@@ -204,8 +208,12 @@ export const useJobStore = create<JobState>((set, get) => ({
   },
 
   subscribeToChanges: (plumberId) => {
+    const channelName = plumberId
+      ? `jobs-changes-${plumberId}`
+      : `jobs-changes-all-${Date.now()}`;
+
     const channel = supabase
-      .channel('jobs-changes')
+      .channel(channelName)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',

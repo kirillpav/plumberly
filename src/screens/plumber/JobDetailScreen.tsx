@@ -37,6 +37,7 @@ export function JobDetailScreen() {
   const [enquiry, setEnquiry] = useState<Enquiry | null>(null);
   const [customer, setCustomer] = useState<UserProfile | null>(null);
   const [quoteInput, setQuoteInput] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -69,10 +70,10 @@ export function JobDetailScreen() {
   useEffect(() => {
     loadData();
 
-    const channel = supabase
-      .channel(`job-detail-${jobId}`)
+    const jobChannel = supabase
+      .channel(`plumber-job-detail-${jobId}`)
       .on('postgres_changes', {
-        event: 'UPDATE',
+        event: '*',
         schema: 'public',
         table: 'jobs',
         filter: `id=eq.${jobId}`,
@@ -82,7 +83,7 @@ export function JobDetailScreen() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(jobChannel);
     };
   }, [jobId]);
 
@@ -95,8 +96,8 @@ export function JobDetailScreen() {
     }
     setActionLoading(true);
     try {
-      await submitQuote(job.id, amount);
-      setJob({ ...job, status: 'quoted', quote_amount: amount });
+      await submitQuote(job.id, amount, selectedTime || undefined);
+      setJob({ ...job, status: 'quoted', quote_amount: amount, scheduled_time: selectedTime || null });
       Alert.alert('Quote Sent', 'The customer has been notified. You will be updated when they respond.');
     } catch (err: any) {
       Alert.alert('Error', err.message);
@@ -155,13 +156,33 @@ export function JobDetailScreen() {
           {enquiry?.description ? (
             <Text style={styles.description}>{enquiry.description}</Text>
           ) : null}
+          {enquiry?.region && (
+            <Text style={styles.meta}>Region: {enquiry.region}</Text>
+          )}
           {enquiry?.preferred_date && (
             <Text style={styles.meta}>Date: {formatDate(enquiry.preferred_date)}</Text>
+          )}
+          {enquiry?.preferred_time && enquiry.preferred_time.length > 0 && (
+            <View style={styles.chipRow}>
+              <Text style={styles.meta}>Customer availability:</Text>
+              {enquiry.preferred_time.map((slot) => (
+                <View key={slot} style={styles.infoChip}>
+                  <Ionicons name="time-outline" size={12} color={Colors.primary} />
+                  <Text style={styles.infoChipText}>{slot}</Text>
+                </View>
+              ))}
+            </View>
           )}
           {job.quote_amount != null && (
             <Text style={styles.quoteDisplay}>
               Quote: {formatCurrency(job.quote_amount)}
             </Text>
+          )}
+          {job.scheduled_time && (
+            <View style={[styles.infoChip, { marginTop: Spacing.xs }]}>
+              <Ionicons name="time-outline" size={12} color={Colors.primary} />
+              <Text style={styles.infoChipText}>Scheduled: {job.scheduled_time}</Text>
+            </View>
           )}
           <Text style={styles.statusText}>
             Status: {job.status.replace('_', ' ')}
@@ -199,7 +220,9 @@ export function JobDetailScreen() {
 
         {/* Quote Input */}
         {job.status === 'pending' && (
-          <>
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Submit Your Quote</Text>
+
             <InputField
               label="Quote Amount (GBP)"
               value={quoteInput}
@@ -207,12 +230,41 @@ export function JobDetailScreen() {
               keyboardType="decimal-pad"
               placeholder="e.g. 150.00"
             />
+
+            {enquiry?.preferred_time && enquiry.preferred_time.length > 0 && (
+              <View style={styles.timePickerSection}>
+                <Text style={styles.timePickerLabel}>Choose your preferred time</Text>
+                <View style={styles.chipRow}>
+                  {enquiry.preferred_time.map((slot) => {
+                    const isSelected = selectedTime === slot;
+                    return (
+                      <TouchableOpacity
+                        key={slot}
+                        style={[styles.selectableChip, isSelected && styles.selectableChipActive]}
+                        onPress={() => setSelectedTime(isSelected ? '' : slot)}
+                      >
+                        <Ionicons
+                          name="time-outline"
+                          size={14}
+                          color={isSelected ? Colors.white : Colors.primary}
+                        />
+                        <Text style={[styles.selectableChipText, isSelected && styles.selectableChipTextActive]}>
+                          {slot}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
             <PrimaryButton
               title="Submit Quote"
               onPress={handleSubmitQuote}
               loading={actionLoading}
+              style={{ marginTop: Spacing.md }}
             />
-          </>
+          </View>
         )}
 
         {/* Waiting for customer banner */}
@@ -301,6 +353,54 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.sm,
     gap: 2,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
+    marginTop: Spacing.xs,
+  },
+  infoChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.lightBlue,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 4,
+    borderRadius: BorderRadius.full,
+    gap: 4,
+  },
+  infoChipText: {
+    ...Typography.caption,
+    color: Colors.primary,
+  },
+  timePickerSection: {
+    marginTop: Spacing.md,
+  },
+  timePickerLabel: {
+    ...Typography.label,
+    color: Colors.grey700,
+    marginBottom: Spacing.xs,
+  },
+  selectableChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    gap: 6,
+  },
+  selectableChipActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  selectableChipText: {
+    ...Typography.bodySmall,
+    color: Colors.primary,
+  },
+  selectableChipTextActive: {
+    color: Colors.white,
   },
   spacer: { height: Spacing.xxl },
 });

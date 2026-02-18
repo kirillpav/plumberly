@@ -87,6 +87,7 @@ export interface Database {
           status: 'pending' | 'quoted' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
           quote_amount: number | null;
           scheduled_date: string | null;
+          scheduled_time: string | null;
           notes: string | null;
           customer_confirmed: boolean;
           plumber_confirmed: boolean;
@@ -101,6 +102,7 @@ export interface Database {
           status?: 'pending' | 'quoted' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
           quote_amount?: number | null;
           scheduled_date?: string | null;
+          scheduled_time?: string | null;
           notes?: string | null;
           customer_confirmed?: boolean;
           plumber_confirmed?: boolean;
