@@ -10,6 +10,8 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { ChatBubble } from '@/components/ChatBubble';
 import { CompletionIndicator } from '@/components/CompletionIndicator';
 import { useJobStore } from '@/store/jobStore';
+import { useEnquiryStore } from '@/store/enquiryStore';
+import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/lib/supabase';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -31,6 +33,8 @@ export function EnquiryDetailScreen() {
   const route = useRoute<RouteProp<CustomerStackParamList, 'EnquiryDetail'>>();
   const { enquiryId } = route.params;
   const { acceptQuote, updateJobStatus, confirmJobDone } = useJobStore();
+  const { deleteEnquiry } = useEnquiryStore();
+  const profile = useAuthStore((s) => s.profile);
   const [enquiry, setEnquiry] = useState<Enquiry | null>(null);
   const [job, setJob] = useState<(Job & { plumber?: { full_name: string; avatar_url: string | null } }) | null>(null);
   const [loading, setLoading] = useState(true);
@@ -115,7 +119,7 @@ export function EnquiryDetailScreen() {
     if (!job) return;
     Alert.alert(
       'Decline Quote',
-      'Are you sure you want to decline this quote? The job will be cancelled.',
+      'The plumber will be notified and can send a revised quote.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -124,8 +128,8 @@ export function EnquiryDetailScreen() {
           onPress: async () => {
             setActionLoading(true);
             try {
-              await updateJobStatus(job.id, 'cancelled');
-              setJob({ ...job, status: 'cancelled' });
+              await updateJobStatus(job.id, 'declined');
+              setJob({ ...job, status: 'declined' });
             } catch (err: any) {
               Alert.alert('Error', err.message ?? 'Failed to decline quote.');
             } finally {
@@ -150,10 +154,37 @@ export function EnquiryDetailScreen() {
     }
   };
 
+  const handleDelete = () => {
+    if (!enquiry || !profile?.id) return;
+    Alert.alert(
+      'Delete Enquiry',
+      'Are you sure you want to delete this enquiry? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setActionLoading(true);
+            try {
+              await deleteEnquiry(enquiry.id, profile.id);
+              nav.goBack();
+            } catch (err: any) {
+              Alert.alert('Error', err.message ?? 'Failed to delete enquiry.');
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (loading) return <LoadingSpinner />;
   if (!enquiry) return null;
 
   const transcript = enquiry.chatbot_transcript as ChatMessage[] | null;
+  const canDelete = !job || job.status === 'cancelled';
 
   return (
     <ScreenWrapper>
@@ -218,7 +249,7 @@ export function EnquiryDetailScreen() {
                 {job.scheduled_time && (
                   <View style={styles.quoteTimeBadge}>
                     <Ionicons name="time-outline" size={14} color={Colors.primary} />
-                    <Text style={styles.quoteTimeText}>Preferred time: {job.scheduled_time}</Text>
+                    <Text style={styles.quoteTimeText}>Proposed time: {job.scheduled_time}</Text>
                   </View>
                 )}
                 <Text style={styles.quoteSubtext}>
@@ -232,6 +263,15 @@ export function EnquiryDetailScreen() {
                     <PrimaryButton title="Accept Quote" onPress={handleAcceptQuote} loading={actionLoading} />
                   </View>
                 </View>
+              </View>
+            )}
+
+            {job.status === 'declined' && (
+              <View style={styles.declinedBanner}>
+                <Ionicons name="close-circle-outline" size={20} color={Colors.error} />
+                <Text style={styles.declinedText}>
+                  You declined the quote of {job.quote_amount != null ? formatCurrency(job.quote_amount) : '—'}. The plumber may send a revised offer.
+                </Text>
               </View>
             )}
 
@@ -289,6 +329,18 @@ export function EnquiryDetailScreen() {
               ))}
             </View>
           </View>
+        )}
+
+        {canDelete && (
+          <TouchableOpacity
+            style={styles.deleteBtn}
+            onPress={handleDelete}
+            disabled={actionLoading}
+            activeOpacity={0.6}
+          >
+            <Ionicons name="trash-outline" size={18} color={Colors.error} />
+            <Text style={styles.deleteBtnText}>Delete Enquiry</Text>
+          </TouchableOpacity>
         )}
 
         <View style={styles.spacer} />
@@ -354,6 +406,16 @@ const styles = StyleSheet.create({
   quoteSubtext: { ...Typography.bodySmall, color: Colors.grey700, marginBottom: Spacing.base },
   quoteButtons: { flexDirection: 'row', gap: Spacing.md },
   quoteButtonWrap: { flex: 1 },
+  declinedBanner: {
+    backgroundColor: '#FEECEB',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.card,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  declinedText: { ...Typography.bodySmall, color: Colors.error, flex: 1 },
   waitingBanner: {
     backgroundColor: Colors.lightBlue,
     padding: Spacing.md,
@@ -376,6 +438,18 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.sm,
     gap: 2,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.base,
+    marginTop: Spacing.xl,
+  },
+  deleteBtnText: {
+    ...Typography.label,
+    color: Colors.error,
   },
   spacer: { height: Spacing.xxl },
 });

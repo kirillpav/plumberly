@@ -5,6 +5,7 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { formatDate } from '@/utils/formatDate';
+import { formatCurrency } from '@/utils/formatCurrency';
 import type { Enquiry } from '@/types/index';
 
 const statusColors: Record<string, string> = {
@@ -21,11 +22,49 @@ interface Props {
   onAccept?: () => void;
   showAcceptButton?: boolean;
   isAccepting?: boolean;
+  quoteAmount?: number | null;
+  plumberName?: string | null;
+  jobStatus?: string | null;
 }
 
-export function EnquiryCard({ enquiry, onPress, onAccept, showAcceptButton, isAccepting }: Props) {
+export function EnquiryCard({
+  enquiry,
+  onPress,
+  onAccept,
+  showAcceptButton,
+  isAccepting,
+  quoteAmount,
+  plumberName,
+  jobStatus,
+}: Props) {
+  const hasQuote = jobStatus === 'quoted' && quoteAmount != null;
+  const isPending = jobStatus === 'pending';
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[styles.card, hasQuote && styles.cardHighlight]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      {hasQuote && (
+        <View style={styles.quoteBanner}>
+          <View style={styles.quoteBannerLeft}>
+            <View style={styles.quoteDot} />
+            <Text style={styles.quoteBannerLabel}>Quote received</Text>
+          </View>
+          <Text style={styles.quoteBannerAmount}>{formatCurrency(quoteAmount!)}</Text>
+        </View>
+      )}
+
+      {isPending && (
+        <View style={styles.pendingBanner}>
+          <Ionicons name="hourglass-outline" size={14} color={Colors.primary} />
+          <Text style={styles.pendingBannerText}>
+            {plumberName ? `${plumberName} is preparing a quote` : 'A plumber is preparing a quote'}
+          </Text>
+        </View>
+      )}
+
       <View style={styles.header}>
         <Text style={styles.title} numberOfLines={1}>
           {enquiry.title}
@@ -83,6 +122,13 @@ export function EnquiryCard({ enquiry, onPress, onAccept, showAcceptButton, isAc
             )}
           </TouchableOpacity>
         )}
+
+        {hasQuote && (
+          <View style={styles.reviewHint}>
+            <Text style={styles.reviewHintText}>Review</Text>
+            <Ionicons name="chevron-forward" size={14} color={Colors.primary} />
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -94,6 +140,62 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.card,
     padding: Spacing.base,
     marginBottom: Spacing.md,
+  },
+  cardHighlight: {
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+  },
+  quoteBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.lightBlue,
+    marginHorizontal: -Spacing.base,
+    marginTop: -Spacing.base,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.sm,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
+  },
+  quoteBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  quoteDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.primary,
+  },
+  quoteBannerLabel: {
+    ...Typography.label,
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  quoteBannerAmount: {
+    ...Typography.h3,
+    color: Colors.primary,
+    fontWeight: '700',
+  },
+  pendingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: '#FFF8EB',
+    marginHorizontal: -Spacing.base,
+    marginTop: -Spacing.base,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.sm,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
+  },
+  pendingBannerText: {
+    ...Typography.caption,
+    color: Colors.warning,
+    fontWeight: '600',
   },
   header: {
     flexDirection: 'row',
@@ -151,5 +253,16 @@ const styles = StyleSheet.create({
   acceptText: {
     ...Typography.label,
     color: Colors.white,
+  },
+  reviewHint: {
+    marginLeft: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  reviewHintText: {
+    ...Typography.label,
+    color: Colors.primary,
+    fontWeight: '600',
   },
 });

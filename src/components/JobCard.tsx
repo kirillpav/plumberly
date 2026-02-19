@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
@@ -16,8 +17,21 @@ interface Props {
 }
 
 export function JobCard({ job, onPress, actionLabel, onAction }: Props) {
+  const isDeclined = job.status === 'declined';
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      style={[styles.card, isDeclined && styles.cardDeclined]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      {isDeclined && (
+        <View style={styles.declinedBanner}>
+          <Ionicons name="close-circle" size={14} color={Colors.error} />
+          <Text style={styles.declinedBannerText}>Quote declined by customer</Text>
+        </View>
+      )}
+
       <View style={styles.row}>
         <Avatar
           uri={job.customer?.avatar_url}
@@ -31,8 +45,10 @@ export function JobCard({ job, onPress, actionLabel, onAction }: Props) {
           </Text>
         </View>
         {job.quote_amount != null && (
-          <View style={styles.pricePill}>
-            <Text style={styles.priceText}>{formatCurrency(job.quote_amount)}</Text>
+          <View style={[styles.pricePill, isDeclined && styles.pricePillDeclined]}>
+            <Text style={[styles.priceText, isDeclined && styles.priceTextDeclined]}>
+              {formatCurrency(job.quote_amount)}
+            </Text>
           </View>
         )}
       </View>
@@ -44,7 +60,14 @@ export function JobCard({ job, onPress, actionLabel, onAction }: Props) {
             : formatDate(job.created_at)}
         </Text>
 
-        {actionLabel && onAction && (
+        {isDeclined && (
+          <View style={styles.requoteHint}>
+            <Text style={styles.requoteHintText}>Requote</Text>
+            <Ionicons name="chevron-forward" size={14} color={Colors.primary} />
+          </View>
+        )}
+
+        {!isDeclined && actionLabel && onAction && (
           <TouchableOpacity style={styles.actionBtn} onPress={onAction}>
             <Text style={styles.actionText}>{actionLabel}</Text>
           </TouchableOpacity>
@@ -60,6 +83,28 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.card,
     padding: Spacing.base,
     marginBottom: Spacing.md,
+  },
+  cardDeclined: {
+    borderWidth: 1.5,
+    borderColor: Colors.error,
+  },
+  declinedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: '#FEECEB',
+    marginHorizontal: -Spacing.base,
+    marginTop: -Spacing.base,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.sm,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
+  },
+  declinedBannerText: {
+    ...Typography.caption,
+    color: Colors.error,
+    fontWeight: '600',
   },
   row: {
     flexDirection: 'row',
@@ -85,9 +130,16 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full,
   },
+  pricePillDeclined: {
+    backgroundColor: '#FEECEB',
+  },
   priceText: {
     ...Typography.label,
     color: Colors.primary,
+  },
+  priceTextDeclined: {
+    color: Colors.error,
+    textDecorationLine: 'line-through',
   },
   footer: {
     flexDirection: 'row',
@@ -97,6 +149,16 @@ const styles = StyleSheet.create({
   date: {
     ...Typography.caption,
     color: Colors.grey500,
+  },
+  requoteHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  requoteHintText: {
+    ...Typography.label,
+    color: Colors.primary,
+    fontWeight: '600',
   },
   actionBtn: {
     backgroundColor: Colors.primary,

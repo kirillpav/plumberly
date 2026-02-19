@@ -9,6 +9,10 @@ dist/
 web-build/
 expo-env.d.ts
 
+# Supabase
+supabase/
+.sql
+
 # Native
 .kotlin/
 *.orig.*

@@ -31,15 +31,18 @@ export function JobDetailScreen() {
   const nav = useNavigation();
   const route = useRoute<RouteProp<PlumberStackParamList, 'JobDetail'>>();
   const { jobId } = route.params;
-  const { submitQuote, confirmJobDone } = useJobStore();
+  const { submitQuote, confirmJobDone, updateJobStatus } = useJobStore();
 
   const [job, setJob] = useState<Job | null>(null);
   const [enquiry, setEnquiry] = useState<Enquiry | null>(null);
   const [customer, setCustomer] = useState<UserProfile | null>(null);
   const [quoteInput, setQuoteInput] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+  const [customTimeframe, setCustomTimeframe] = useState('');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+
+  const isFlexible = selectedTime.toLowerCase() === 'flexible';
 
   const loadData = async () => {
     const { data: j } = await supabase
@@ -94,10 +97,15 @@ export function JobDetailScreen() {
       Alert.alert('Invalid', 'Please enter a valid quote amount.');
       return;
     }
+    if (isFlexible && !customTimeframe.trim()) {
+      Alert.alert('Time Required', 'Please propose a timeframe for the customer.');
+      return;
+    }
+    const resolvedTime = isFlexible ? customTimeframe.trim() : (selectedTime || undefined);
     setActionLoading(true);
     try {
-      await submitQuote(job.id, amount, selectedTime || undefined);
-      setJob({ ...job, status: 'quoted', quote_amount: amount, scheduled_time: selectedTime || null });
+      await submitQuote(job.id, amount, resolvedTime);
+      setJob({ ...job, status: 'quoted', quote_amount: amount, scheduled_time: (resolvedTime as string) || null });
       Alert.alert('Quote Sent', 'The customer has been notified. You will be updated when they respond.');
     } catch (err: any) {
       Alert.alert('Error', err.message);
@@ -117,6 +125,32 @@ export function JobDetailScreen() {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleDismiss = () => {
+    if (!job) return;
+    Alert.alert(
+      'Remove Listing',
+      'This will remove the job from your list. You won\'t be able to requote.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            setActionLoading(true);
+            try {
+              await updateJobStatus(job.id, 'cancelled');
+              nav.goBack();
+            } catch (err: any) {
+              Alert.alert('Error', err.message);
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (loading) return <LoadingSpinner />;
@@ -241,7 +275,10 @@ export function JobDetailScreen() {
                       <TouchableOpacity
                         key={slot}
                         style={[styles.selectableChip, isSelected && styles.selectableChipActive]}
-                        onPress={() => setSelectedTime(isSelected ? '' : slot)}
+                        onPress={() => {
+                          setSelectedTime(isSelected ? '' : slot);
+                          if (slot.toLowerCase() !== 'flexible') setCustomTimeframe('');
+                        }}
                       >
                         <Ionicons
                           name="time-outline"
@@ -255,6 +292,18 @@ export function JobDetailScreen() {
                     );
                   })}
                 </View>
+
+                {isFlexible && (
+                  <View style={styles.flexibleInput}>
+                    <Text style={styles.flexibleLabel}>Propose a timeframe for the customer</Text>
+                    <InputField
+                      label=""
+                      value={customTimeframe}
+                      onChangeText={setCustomTimeframe}
+                      placeholder="e.g. Tuesday 2–4pm, or next Thursday morning"
+                    />
+                  </View>
+                )}
               </View>
             )}
 
@@ -276,6 +325,48 @@ export function JobDetailScreen() {
                 ? 'Quote sent — waiting for the customer to accept'
                 : 'Customer accepted — job starting soon'}
             </Text>
+          </View>
+        )}
+
+        {/* Declined — requote or dismiss */}
+        {job.status === 'declined' && (
+          <View style={styles.declinedCard}>
+            <View style={styles.declinedHeader}>
+              <View style={styles.declinedIconWrap}>
+                <Ionicons name="close-circle" size={18} color={Colors.error} />
+              </View>
+              <View style={styles.declinedHeaderText}>
+                <Text style={styles.declinedTitle}>Quote Declined</Text>
+                <Text style={styles.declinedSubtitle}>
+                  Your quote of {job.quote_amount != null ? formatCurrency(job.quote_amount) : '—'} was declined
+                </Text>
+              </View>
+            </View>
+
+            <InputField
+              label="New Quote Amount (GBP)"
+              value={quoteInput}
+              onChangeText={setQuoteInput}
+              keyboardType="decimal-pad"
+              placeholder={job.quote_amount != null ? `Previously ${formatCurrency(job.quote_amount)}` : 'e.g. 120.00'}
+            />
+
+            <PrimaryButton
+              title="Send Revised Quote"
+              onPress={handleSubmitQuote}
+              loading={actionLoading}
+              style={{ marginTop: Spacing.sm }}
+            />
+
+            <TouchableOpacity
+              style={styles.dismissBtn}
+              onPress={handleDismiss}
+              disabled={actionLoading}
+              activeOpacity={0.6}
+            >
+              <Ionicons name="eye-off-outline" size={16} color={Colors.grey500} />
+              <Text style={styles.dismissBtnText}>Don't show this listing</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -401,6 +492,61 @@ const styles = StyleSheet.create({
   },
   selectableChipTextActive: {
     color: Colors.white,
+  },
+  flexibleInput: {
+    marginTop: Spacing.md,
+  },
+  flexibleLabel: {
+    ...Typography.label,
+    color: Colors.grey700,
+    marginBottom: Spacing.xs,
+  },
+  declinedCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.card,
+    padding: Spacing.base,
+    marginBottom: Spacing.base,
+    borderWidth: 1.5,
+    borderColor: Colors.error,
+  },
+  declinedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.base,
+  },
+  declinedIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#FEECEB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  declinedHeaderText: {
+    flex: 1,
+  },
+  declinedTitle: {
+    ...Typography.label,
+    color: Colors.error,
+    fontWeight: '700',
+  },
+  declinedSubtitle: {
+    ...Typography.caption,
+    color: Colors.grey500,
+    marginTop: 1,
+  },
+  dismissBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    marginTop: Spacing.sm,
+  },
+  dismissBtnText: {
+    ...Typography.label,
+    color: Colors.grey500,
   },
   spacer: { height: Spacing.xxl },
 });

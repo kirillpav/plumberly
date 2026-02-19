@@ -17,6 +17,7 @@ interface EnquiryState {
     chatbotTranscript?: ChatMessage[];
   }) => Promise<void>;
   updateEnquiry: (id: string, updates: Partial<Enquiry>) => Promise<void>;
+  deleteEnquiry: (id: string, customerId: string) => Promise<void>;
   getByStatus: (status: EnquiryStatus) => Enquiry[];
   subscribeToChanges: (customerId?: string) => () => void;
 }
@@ -75,6 +76,17 @@ export const useEnquiryStore = create<EnquiryState>((set, get) => ({
       .update(updates as Record<string, unknown>)
       .eq('id', id);
     if (error) throw error;
+  },
+
+  deleteEnquiry: async (id, customerId) => {
+    const { error } = await supabase
+      .from('enquiries')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    set((state) => ({
+      enquiries: state.enquiries.filter((e) => e.id !== id),
+    }));
   },
 
   getByStatus: (status) => {

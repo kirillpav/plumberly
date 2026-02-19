@@ -45,7 +45,7 @@ export interface Enquiry {
   customer?: UserProfile;
 }
 
-export type JobStatus = 'pending' | 'quoted' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
+export type JobStatus = 'pending' | 'quoted' | 'declined' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
 
 export interface Job {
   id: string;

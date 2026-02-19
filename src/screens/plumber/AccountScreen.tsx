@@ -15,6 +15,7 @@ type Nav = NativeStackNavigationProp<PlumberStackParamList>;
 
 const MENU_ITEMS: { icon: keyof typeof Ionicons.glyphMap; label: string; route?: keyof PlumberStackParamList }[] = [
   { icon: 'person-outline', label: 'Account Details', route: 'EditProfile' },
+  { icon: 'location-outline', label: 'Service Area', route: 'EditProfile' },
   { icon: 'card-outline', label: 'Payment Settings', route: 'BankDetails' },
   { icon: 'help-circle-outline', label: 'Plumber Support' },
 ];
