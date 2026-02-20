@@ -1,5 +1,5 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
-import type { ChatMessage } from './index';
+import type { ChatMessage, IntakeData } from './index';
 
 // Auth
 export type AuthStackParamList = {
@@ -17,7 +17,7 @@ export type CustomerTabParamList = {
 
 export type CustomerStackParamList = {
   CustomerTabs: NavigatorScreenParams<CustomerTabParamList>;
-  NewEnquiry: { transcript?: ChatMessage[] } | undefined;
+  NewEnquiry: { transcript?: ChatMessage[]; intakeData?: IntakeData } | undefined;
   EnquiryDetail: { enquiryId: string };
   EditProfile: undefined;
 };

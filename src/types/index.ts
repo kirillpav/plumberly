@@ -66,12 +66,45 @@ export interface Job {
   plumber?: UserProfile;
 }
 
+export type IntakeIssueType =
+  | 'leak'
+  | 'clog'
+  | 'toilet'
+  | 'faucet'
+  | 'low_pressure'
+  | 'no_hot_water'
+  | 'smell'
+  | 'other';
+
+export interface IntakeFieldDefinition {
+  key: string;
+  label: string;
+  type: 'text' | 'select' | 'boolean';
+  options?: string[];
+  required: boolean;
+}
+
+export interface IntakeData {
+  issueType: IntakeIssueType;
+  whenStarted: string;
+  fields: Record<string, any>;
+  photos: string[];
+}
+
+export interface TriageMetadata {
+  isEmergency: boolean;
+  category: 1 | 2 | 3;
+  confidence: number;
+  modelUsed: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: string;
   images?: string[];
+  metadata?: TriageMetadata;
 }
 
 export interface Region {

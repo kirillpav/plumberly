@@ -1,119 +1,250 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
   TextInput,
   FlatList,
   TouchableOpacity,
-  Image,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
 import { ChatBubble } from '@/components/ChatBubble';
 import { TypingIndicator } from '@/components/TypingIndicator';
 import { PrimaryButton } from '@/components/shared/PrimaryButton';
+import { IssueTypeSelector } from '@/components/intake/IssueTypeSelector';
+import { DynamicFields, validateDynamicFields } from '@/components/intake/DynamicFields';
+import { IntakeSummary } from '@/components/intake/IntakeSummary';
 import { useChatStore } from '@/store/chatStore';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { Config } from '@/constants/config';
 import type { CustomerStackParamList } from '@/types/navigation';
-import type { ChatMessage } from '@/types/index';
+import type { ChatMessage, IntakeIssueType, IntakeData } from '@/types/index';
 
 type Nav = NativeStackNavigationProp<CustomerStackParamList>;
 
-const QUICK_ACTIONS = [
-  { label: 'Leak', icon: 'water-outline' as const, message: "I have a water leak in my home." },
-  { label: 'Drain', icon: 'funnel-outline' as const, message: "My drain is blocked or slow." },
-  { label: 'Pressure', icon: 'speedometer-outline' as const, message: "I have low water pressure." },
-  { label: 'Fixture', icon: 'build-outline' as const, message: "I need a fixture installed or repaired." },
-];
-
 export function ChatbotScreen() {
   const nav = useNavigation<Nav>();
-  const { messages, isStreaming, sendMessage, clearChat, getTranscriptJSON } = useChatStore();
+  const {
+    messages,
+    isStreaming,
+    currentPhase,
+    triageMetadata,
+    intakeData: storeIntakeData,
+    sendMessage,
+    setIntakeData,
+    clearChat,
+    getTranscriptWithIntake,
+  } = useChatStore();
+
+  // Intake form state
+  const [intakeStep, setIntakeStep] = useState(1);
+  const [selectedIssueType, setSelectedIssueType] = useState<IntakeIssueType | null>(null);
+  const [whenStarted, setWhenStarted] = useState('');
+  const [fields, setFields] = useState<Record<string, any>>({});
+  const [photos, setPhotos] = useState<string[]>([]);
+
+  // Chat state
   const [input, setInput] = useState('');
-  const [pendingImages, setPendingImages] = useState<{ uri: string; base64: string }[]>([]);
   const flatListRef = useRef<FlatList>(null);
 
   const userExchanges = messages.filter((m) => m.role === 'user').length;
-  const showBookCTA = userExchanges >= Config.chatbot.minExchangesForCTA;
+  const showBookCTA =
+    userExchanges >= Config.chatbot.minExchangesForCTA &&
+    !isStreaming &&
+    triageMetadata &&
+    !triageMetadata.isEmergency;
 
-  const pickImage = async () => {
-    if (pendingImages.length >= 2) {
-      Alert.alert('Limit reached', 'You can attach up to 2 images per message.');
-      return;
-    }
+  // Category-aware CTA: Cat 2-3 show CTA immediately after first response
+  const showImmediateCTA =
+    !isStreaming &&
+    triageMetadata &&
+    !triageMetadata.isEmergency &&
+    triageMetadata.category >= 2 &&
+    messages.length >= 2;
 
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please allow access to your photos.');
-      return;
-    }
+  const handleFieldChange = useCallback((key: string, value: any) => {
+    setFields((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.5,
-      allowsMultipleSelection: false,
-      base64: true,
-    });
-
-    if (!result.canceled && result.assets[0]?.base64) {
-      const asset = result.assets[0];
-      setPendingImages((prev) => [...prev, { uri: asset.uri, base64: asset.base64! }]);
+  const handleIntakeNext = () => {
+    if (intakeStep === 1 && selectedIssueType) {
+      setFields({});
+      setWhenStarted('');
+      setPhotos([]);
+      setIntakeStep(2);
+    } else if (intakeStep === 2) {
+      setIntakeStep(3);
     }
   };
 
-  const removePendingImage = (index: number) => {
-    setPendingImages((prev) => prev.filter((_, i) => i !== index));
+  const handleIntakeBack = () => {
+    if (intakeStep === 2) {
+      setIntakeStep(1);
+    } else if (intakeStep === 3) {
+      setIntakeStep(2);
+    }
   };
 
-  const handleSend = async (text?: string) => {
-    const msg = (text ?? input).trim();
-    if ((!msg && pendingImages.length === 0) || isStreaming) return;
+  const handleStartChat = () => {
+    if (!selectedIssueType) return;
+    const data: IntakeData = {
+      issueType: selectedIssueType,
+      whenStarted,
+      fields,
+      photos,
+    };
+    setIntakeData(data);
+  };
 
-    const imageDataUris = pendingImages.map((img) => {
-      const ext = img.uri.toLowerCase().endsWith('.png') ? 'png' : 'jpeg';
-      return `data:image/${ext};base64,${img.base64}`;
-    });
-
+  const handleSend = async () => {
+    const msg = input.trim();
+    if (!msg || isStreaming) return;
     setInput('');
-    setPendingImages([]);
-    sendMessage(msg || 'What do you see in this image?', imageDataUris.length > 0 ? imageDataUris : undefined);
+    sendMessage(msg);
   };
 
   const handleNewChat = () => {
     if (isStreaming) return;
     Alert.alert('New Chat', 'Start a fresh conversation?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'New Chat', onPress: () => { clearChat(); setPendingImages([]); setInput(''); } },
+      {
+        text: 'New Chat',
+        onPress: () => {
+          clearChat();
+          setInput('');
+          setIntakeStep(1);
+          setSelectedIssueType(null);
+          setWhenStarted('');
+          setFields({});
+          setPhotos([]);
+        },
+      },
     ]);
   };
 
   const handleBook = () => {
-    nav.navigate('NewEnquiry', { transcript: getTranscriptJSON() });
+    const { intakeData, transcript } = getTranscriptWithIntake();
+    nav.navigate('NewEnquiry', { transcript, intakeData: intakeData ?? undefined });
   };
 
+  const isStep2Valid =
+    selectedIssueType && validateDynamicFields(selectedIssueType, whenStarted, fields);
+
   const renderItem = ({ item }: { item: ChatMessage }) => (
-    <View>
-      <ChatBubble content={item.content} role={item.role as 'user' | 'assistant'} />
-      {item.images && item.images.length > 0 && (
-        <View style={styles.messageImages}>
-          {item.images.map((uri, i) => (
-            <Image key={i} source={{ uri }} style={styles.messageImage} />
-          ))}
-        </View>
-      )}
-    </View>
+    <ChatBubble content={item.content} role={item.role as 'user' | 'assistant'} />
   );
 
+  // ——— INTAKE PHASE ———
+  if (currentPhase === 'intake') {
+    return (
+      <ScreenWrapper noPadding>
+        <View style={styles.header}>
+          <View style={styles.headerIcon}>
+            <Ionicons name="water" size={16} color={Colors.white} />
+          </View>
+          <View style={styles.headerText}>
+            <Text style={styles.title}>Tell us about your issue</Text>
+            <Text style={styles.subtitle}>Step {intakeStep} of 3</Text>
+          </View>
+        </View>
+
+        <View style={styles.stepIndicator}>
+          {[1, 2, 3].map((step) => (
+            <View
+              key={step}
+              style={[
+                styles.stepDot,
+                step <= intakeStep && styles.stepDotActive,
+              ]}
+            />
+          ))}
+        </View>
+
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.intakeContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {intakeStep === 1 && (
+            <View>
+              <Text style={styles.sectionTitle}>What type of issue?</Text>
+              <IssueTypeSelector
+                selected={selectedIssueType}
+                onSelect={setSelectedIssueType}
+              />
+            </View>
+          )}
+
+          {intakeStep === 2 && selectedIssueType && (
+            <View>
+              <TouchableOpacity onPress={handleIntakeBack} style={styles.backBtn}>
+                <Ionicons name="chevron-back" size={20} color={Colors.primary} />
+                <Text style={styles.backText}>Back</Text>
+              </TouchableOpacity>
+              <Text style={styles.sectionTitle}>Tell us more</Text>
+              <DynamicFields
+                issueType={selectedIssueType}
+                whenStarted={whenStarted}
+                onWhenStartedChange={setWhenStarted}
+                fields={fields}
+                onFieldChange={handleFieldChange}
+                photos={photos}
+                onPhotosChange={setPhotos}
+              />
+            </View>
+          )}
+
+          {intakeStep === 3 && selectedIssueType && (
+            <View>
+              <TouchableOpacity onPress={handleIntakeBack} style={styles.backBtn}>
+                <Ionicons name="chevron-back" size={20} color={Colors.primary} />
+                <Text style={styles.backText}>Back</Text>
+              </TouchableOpacity>
+              <Text style={styles.sectionTitle}>Review your details</Text>
+              <IntakeSummary
+                issueType={selectedIssueType}
+                whenStarted={whenStarted}
+                fields={fields}
+                photos={photos}
+                onEdit={() => setIntakeStep(2)}
+              />
+            </View>
+          )}
+        </ScrollView>
+
+        <View style={styles.intakeFooter}>
+          {intakeStep === 1 && (
+            <PrimaryButton
+              title="Next"
+              onPress={handleIntakeNext}
+              disabled={!selectedIssueType}
+            />
+          )}
+          {intakeStep === 2 && (
+            <PrimaryButton
+              title="Next"
+              onPress={handleIntakeNext}
+              disabled={!isStep2Valid}
+            />
+          )}
+          {intakeStep === 3 && (
+            <PrimaryButton title="Start Chat" onPress={handleStartChat} />
+          )}
+        </View>
+      </ScreenWrapper>
+    );
+  }
+
+  // ——— CHAT PHASE ———
   return (
     <ScreenWrapper noPadding>
       <KeyboardAvoidingView
@@ -129,88 +260,65 @@ export function ChatbotScreen() {
             <Text style={styles.title}>Plumbing Assistant</Text>
             <Text style={styles.subtitle}>AI-powered diagnostics</Text>
           </View>
-          {messages.length > 0 && (
-            <TouchableOpacity
-              style={styles.newChatBtn}
-              onPress={handleNewChat}
-              activeOpacity={0.6}
-              disabled={isStreaming}
-            >
-              <Ionicons name="create-outline" size={20} color={isStreaming ? Colors.grey300 : Colors.primary} />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={styles.newChatBtn}
+            onPress={handleNewChat}
+            activeOpacity={0.6}
+            disabled={isStreaming}
+          >
+            <Ionicons
+              name="create-outline"
+              size={20}
+              color={isStreaming ? Colors.grey300 : Colors.primary}
+            />
+          </TouchableOpacity>
         </View>
 
-        {messages.length === 0 ? (
-          <View style={styles.empty}>
-            <View style={styles.emptyIconWrap}>
-              <Ionicons name="chatbubble-ellipses-outline" size={40} color={Colors.primary} />
-            </View>
-            <Text style={styles.emptyTitle}>How can we help?</Text>
-            <Text style={styles.emptySubtitle}>
-              Describe your plumbing issue or tap a topic below
-            </Text>
-            <View style={styles.quickActions}>
-              {QUICK_ACTIONS.map((qa) => (
-                <TouchableOpacity
-                  key={qa.label}
-                  style={styles.quickBtn}
-                  onPress={() => handleSend(qa.message)}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name={qa.icon} size={18} color={Colors.primary} />
-                  <Text style={styles.quickText}>{qa.label}</Text>
-                </TouchableOpacity>
-              ))}
+        {/* Emergency Overlay */}
+        {triageMetadata?.isEmergency && (
+          <View style={styles.emergencyBanner}>
+            <Ionicons name="warning" size={24} color={Colors.white} />
+            <View style={styles.emergencyText}>
+              <Text style={styles.emergencyTitle}>Emergency Detected</Text>
+              <Text style={styles.emergencySubtitle}>
+                Follow the safety steps below. If you smell gas, leave the property immediately and call the National Gas Emergency number: 0800 111 999.
+              </Text>
             </View>
           </View>
-        ) : (
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            renderItem={renderItem}
-            keyExtractor={(m) => m.id}
-            contentContainerStyle={styles.list}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-            ListFooterComponent={isStreaming ? <TypingIndicator /> : null}
-          />
         )}
 
-        {showBookCTA && !isStreaming && (
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          renderItem={renderItem}
+          keyExtractor={(m) => m.id}
+          contentContainerStyle={styles.list}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          ListFooterComponent={isStreaming ? <TypingIndicator /> : null}
+        />
+
+        {/* Emergency CTA */}
+        {triageMetadata?.isEmergency && !isStreaming && (
           <View style={styles.ctaRow}>
-            <PrimaryButton title="Book a Plumber" onPress={handleBook} />
+            <PrimaryButton
+              title="Book Emergency Plumber"
+              onPress={handleBook}
+              style={{ backgroundColor: Colors.error }}
+            />
           </View>
         )}
 
-        {pendingImages.length > 0 && (
-          <View style={styles.pendingRow}>
-            {pendingImages.map((img, i) => (
-              <View key={img.uri} style={styles.pendingThumb}>
-                <Image source={{ uri: img.uri }} style={styles.pendingImage} />
-                <TouchableOpacity
-                  style={styles.pendingRemove}
-                  onPress={() => removePendingImage(i)}
-                >
-                  <Ionicons name="close-circle" size={20} color={Colors.error} />
-                </TouchableOpacity>
-              </View>
-            ))}
+        {/* Category-aware CTA */}
+        {(showBookCTA || showImmediateCTA) && !triageMetadata?.isEmergency && (
+          <View style={styles.ctaRow}>
+            <PrimaryButton
+              title={triageMetadata && triageMetadata.category >= 2 ? 'Get Professional Help' : 'Book a Plumber'}
+              onPress={handleBook}
+            />
           </View>
         )}
 
         <View style={styles.inputBar}>
-          <TouchableOpacity
-            style={styles.attachBtn}
-            onPress={pickImage}
-            disabled={isStreaming}
-            activeOpacity={0.6}
-          >
-            <Ionicons
-              name="image-outline"
-              size={22}
-              color={isStreaming ? Colors.grey300 : Colors.grey500}
-            />
-          </TouchableOpacity>
           <View style={styles.inputWrap}>
             <TextInput
               style={styles.input}
@@ -226,10 +334,10 @@ export function ChatbotScreen() {
           <TouchableOpacity
             style={[
               styles.sendBtn,
-              ((!input.trim() && pendingImages.length === 0) || isStreaming) && styles.sendDisabled,
+              (!input.trim() || isStreaming) && styles.sendDisabled,
             ]}
-            onPress={() => handleSend()}
-            disabled={(!input.trim() && pendingImages.length === 0) || isStreaming}
+            onPress={handleSend}
+            disabled={!input.trim() || isStreaming}
             activeOpacity={0.7}
           >
             <Ionicons name="arrow-up" size={20} color={Colors.white} />
@@ -260,9 +368,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerText: {
-    flex: 1,
-  },
+  headerText: { flex: 1 },
   title: {
     ...Typography.label,
     fontWeight: '700',
@@ -281,104 +387,83 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  list: {
-    paddingTop: Spacing.base,
-    paddingBottom: Spacing.sm,
-  },
-  empty: {
-    flex: 1,
+  // Step indicator
+  stepIndicator: {
+    flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xxl,
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.white,
   },
-  emptyIconWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: Colors.lightBlue,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.base,
+  stepDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.grey300,
   },
-  emptyTitle: {
+  stepDotActive: {
+    backgroundColor: Colors.primary,
+    width: 24,
+  },
+  // Intake
+  intakeContent: {
+    padding: Spacing.base,
+    paddingBottom: Spacing.xxl,
+  },
+  sectionTitle: {
     ...Typography.h2,
     fontWeight: '700',
     color: Colors.grey900,
+    marginBottom: Spacing.base,
   },
-  emptySubtitle: {
-    ...Typography.bodySmall,
-    color: Colors.grey500,
-    textAlign: 'center',
-    marginTop: Spacing.sm,
-  },
-  quickActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginTop: Spacing.xl,
-    justifyContent: 'center',
-  },
-  quickBtn: {
+  backBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    backgroundColor: Colors.white,
+    gap: 4,
+    marginBottom: Spacing.base,
+  },
+  backText: {
+    ...Typography.body,
+    color: Colors.primary,
+  },
+  intakeFooter: {
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.card,
-    borderWidth: 1,
-    borderColor: Colors.grey100,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
+    backgroundColor: Colors.white,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.grey100,
   },
-  quickText: {
-    ...Typography.label,
-    fontWeight: '600',
-    color: Colors.grey700,
+  // Chat
+  list: {
+    paddingTop: Spacing.base,
+    paddingBottom: Spacing.sm,
   },
   ctaRow: {
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.sm,
   },
-  messageImages: {
+  // Emergency
+  emergencyBanner: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    alignItems: 'flex-start',
+    gap: Spacing.md,
+    backgroundColor: Colors.error,
     paddingHorizontal: Spacing.base,
-    marginTop: -Spacing.xs,
-    marginBottom: Spacing.sm,
+    paddingVertical: Spacing.md,
   },
-  messageImage: {
-    width: 60,
-    height: 60,
-    borderRadius: BorderRadius.sm,
+  emergencyText: { flex: 1 },
+  emergencyTitle: {
+    ...Typography.label,
+    fontWeight: '700',
+    color: Colors.white,
   },
-  pendingRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.white,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.grey100,
+  emergencySubtitle: {
+    ...Typography.caption,
+    color: Colors.white,
+    marginTop: 4,
+    opacity: 0.9,
   },
-  pendingThumb: {
-    width: 56,
-    height: 56,
-    borderRadius: BorderRadius.sm,
-    overflow: 'hidden',
-  },
-  pendingImage: {
-    width: '100%',
-    height: '100%',
-  },
-  pendingRemove: {
-    position: 'absolute',
-    top: 1,
-    right: 1,
-  },
+  // Input bar
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -388,12 +473,6 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.grey100,
     gap: Spacing.xs,
-  },
-  attachBtn: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   inputWrap: {
     flex: 1,

@@ -22,6 +22,7 @@ import { uploadEnquiryImage } from '@/lib/storage';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
+import { issueTypeToProblemType, generateDescription } from '@/utils/intakeHelpers';
 import type { CustomerStackParamList } from '@/types/navigation';
 
 const PROBLEM_TYPES = [
@@ -48,15 +49,20 @@ export function NewEnquiryScreen() {
   const nav = useNavigation<Nav>();
   const route = useRoute<RouteProp<CustomerStackParamList, 'NewEnquiry'>>();
   const transcript = route.params?.transcript;
+  const intakeData = route.params?.intakeData;
   const profile = useAuthStore((s) => s.profile);
   const createEnquiry = useEnquiryStore((s) => s.createEnquiry);
 
-  const [problemType, setProblemType] = useState('');
-  const [description, setDescription] = useState('');
+  const [problemType, setProblemType] = useState(
+    intakeData ? issueTypeToProblemType(intakeData.issueType) : ''
+  );
+  const [description, setDescription] = useState(
+    intakeData ? generateDescription(intakeData) : ''
+  );
   const [region, setRegion] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [timeSlots, setTimeSlots] = useState<string[]>([]);
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<string[]>(intakeData?.photos ?? []);
   const [loading, setLoading] = useState(false);
 
   const toggleTimeSlot = (slot: string) => {
