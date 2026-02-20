@@ -1,6 +1,6 @@
-import { supabase } from '@/lib/supabase';
 import type { IntakeData, TriageMetadata, ChatMessage } from '@/types/index';
 import { Config } from '@/constants/config';
+import { useAuthStore } from '@/store/authStore';
 
 interface ChatTriageResponse {
   message: string;
@@ -14,22 +14,10 @@ const FALLBACK_RESPONSE: ChatTriageResponse = {
 
 const TIMEOUT_MS = 30_000;
 
-async function getAccessToken(): Promise<string> {
-  try {
-    // Race the session fetch against a 3s timeout so it never blocks the request
-    const result = await Promise.race([
-      supabase.auth.getSession(),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 3_000)),
-    ]);
-
-    if (result && typeof result === 'object' && 'data' in result) {
-      const token = (result as any).data?.session?.access_token;
-      if (token) return token;
-    }
-  } catch {
-    // Fall through to anon key
-  }
-  return Config.supabase.anonKey;
+function getAccessToken(): string {
+  // Read token directly from Zustand store to avoid the getSession() deadlock
+  const token = useAuthStore.getState().session?.access_token;
+  return token ?? Config.supabase.anonKey;
 }
 
 export async function callChatTriage(
