@@ -25,7 +25,7 @@ export const useJobStore = create<JobState>((set, get) => ({
     try {
       let query = supabase
         .from('jobs')
-        .select('*, enquiry:enquiries(*)')
+        .select('*, enquiry:enquiries(*), customer:profiles!customer_id(full_name, avatar_url)')
         .order('created_at', { ascending: false });
 
       if (plumberId) {
@@ -81,17 +81,21 @@ export const useJobStore = create<JobState>((set, get) => ({
   },
 
   submitQuote: async (jobId, amount, scheduledTime) => {
+    // Set scheduled_date from enquiry's preferred_date, or default to today
+    const job = get().jobs.find((j) => j.id === jobId);
+    const scheduledDate = job?.enquiry?.preferred_date
+      ?? new Date().toISOString().split('T')[0];
+
     const { error } = await supabase
       .from('jobs')
       .update({
         quote_amount: amount,
         status: 'quoted',
+        scheduled_date: scheduledDate,
         ...(scheduledTime ? { scheduled_time: scheduledTime } : {}),
       })
       .eq('id', jobId);
     if (error) throw error;
-
-    const job = get().jobs.find((j) => j.id === jobId);
     if (job) {
       const { data: plumber } = await supabase
         .from('profiles')
