@@ -25,6 +25,7 @@ interface Props {
   quoteAmount?: number | null;
   plumberName?: string | null;
   jobStatus?: string | null;
+  unreadCount?: number;
 }
 
 export function EnquiryCard({
@@ -36,6 +37,7 @@ export function EnquiryCard({
   quoteAmount,
   plumberName,
   jobStatus,
+  unreadCount,
 }: Props) {
   const hasQuote = jobStatus === 'quoted' && quoteAmount != null;
   const isPending = jobStatus === 'pending';
@@ -121,6 +123,13 @@ export function EnquiryCard({
               <Text style={styles.acceptText}>Accept</Text>
             )}
           </TouchableOpacity>
+        )}
+
+        {!!unreadCount && unreadCount > 0 && (
+          <View style={styles.unreadBadge}>
+            <Ionicons name="chatbubble" size={12} color={Colors.white} />
+            <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
+          </View>
         )}
 
         {hasQuote && (
@@ -253,6 +262,21 @@ const styles = StyleSheet.create({
   acceptText: {
     ...Typography.label,
     color: Colors.white,
+  },
+  unreadBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+    marginLeft: 'auto',
+  },
+  unreadBadgeText: {
+    ...Typography.caption,
+    color: Colors.white,
+    fontWeight: '700',
   },
   reviewHint: {
     marginLeft: 'auto',

@@ -12,6 +12,7 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { useJobStore } from '@/store/jobStore';
 import { useEnquiryStore } from '@/store/enquiryStore';
 import { useAuthStore } from '@/store/authStore';
+import { useUnreadCounts } from '@/hooks/useUnreadCounts';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
@@ -27,6 +28,7 @@ export function JobsScreen() {
   const plumberDetails = useAuthStore((s) => s.plumberDetails);
   const { jobs, isLoading: jobsLoading, fetchJobs, acceptJob, subscribeToChanges } = useJobStore();
   const { enquiries, isLoading: enqLoading, fetchEnquiries, subscribeToChanges: subscribeEnquiries } = useEnquiryStore();
+  const unreadCounts = useUnreadCounts();
   const [activeIndex, setActiveIndex] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -184,6 +186,7 @@ export function JobsScreen() {
                 onPress={() => nav.navigate('JobDetail', { jobId: item.id })}
                 actionLabel="View"
                 onAction={() => nav.navigate('JobDetail', { jobId: item.id })}
+                unreadCount={unreadCounts[item.id] ?? 0}
               />
             )}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}

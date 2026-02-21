@@ -8,6 +8,7 @@ import { NewEnquiryScreen } from '@/screens/customer/NewEnquiryScreen';
 import { EnquiryDetailScreen } from '@/screens/customer/EnquiryDetailScreen';
 import { AccountScreen } from '@/screens/customer/AccountScreen';
 import { EditProfileScreen } from '@/screens/customer/EditProfileScreen';
+import { ChatJobScreen } from '@/screens/shared/ChatJobScreen';
 import type { CustomerTabParamList, CustomerStackParamList } from '@/types/navigation';
 import { Colors } from '@/constants/colors';
 
@@ -69,6 +70,7 @@ export function CustomerTabNavigator() {
       <Stack.Screen name="CustomerTabs" component={CustomerTabs} />
       <Stack.Screen name="NewEnquiry" component={NewEnquiryScreen} />
       <Stack.Screen name="EnquiryDetail" component={EnquiryDetailScreen} />
+      <Stack.Screen name="ChatJob" component={ChatJobScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
     </Stack.Navigator>
   );

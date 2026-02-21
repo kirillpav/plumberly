@@ -12,6 +12,7 @@ import { CompletionIndicator } from '@/components/CompletionIndicator';
 import { useJobStore } from '@/store/jobStore';
 import { useEnquiryStore } from '@/store/enquiryStore';
 import { useAuthStore } from '@/store/authStore';
+import { useUnreadCounts } from '@/hooks/useUnreadCounts';
 import { supabase } from '@/lib/supabase';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -19,6 +20,7 @@ import { Spacing, BorderRadius } from '@/constants/spacing';
 import { formatDate } from '@/utils/formatDate';
 import { formatCurrency } from '@/utils/formatCurrency';
 import type { CustomerStackParamList } from '@/types/navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Enquiry, Job, ChatMessage } from '@/types/index';
 
 const statusColors: Record<string, string> = {
@@ -29,12 +31,13 @@ const statusColors: Record<string, string> = {
 };
 
 export function EnquiryDetailScreen() {
-  const nav = useNavigation();
+  const nav = useNavigation<NativeStackNavigationProp<CustomerStackParamList>>();
   const route = useRoute<RouteProp<CustomerStackParamList, 'EnquiryDetail'>>();
   const { enquiryId } = route.params;
   const { acceptQuote, updateJobStatus, confirmJobDone } = useJobStore();
   const { deleteEnquiry } = useEnquiryStore();
   const profile = useAuthStore((s) => s.profile);
+  const unreadCounts = useUnreadCounts();
   const [enquiry, setEnquiry] = useState<Enquiry | null>(null);
   const [job, setJob] = useState<(Job & { plumber?: { full_name: string; avatar_url: string | null } }) | null>(null);
   const [loading, setLoading] = useState(true);
@@ -238,6 +241,36 @@ export function EnquiryDetailScreen() {
                 <Text style={styles.jobStatus}>Status: {job.status.replace('_', ' ')}</Text>
               </View>
             </View>
+
+            {(job.status === 'accepted' || job.status === 'in_progress') && (
+              <TouchableOpacity
+                style={styles.messageCard}
+                activeOpacity={0.7}
+                onPress={() =>
+                  nav.navigate('ChatJob', {
+                    jobId: job.id,
+                    otherPartyName: job.plumber?.full_name || 'Plumber',
+                  })
+                }
+              >
+                <View style={styles.messageCardInner}>
+                  <View style={styles.messageIconWrap}>
+                    <Ionicons name="chatbubbles" size={20} color={Colors.primary} />
+                  </View>
+                  <View style={styles.messageCardTextWrap}>
+                    <Text style={styles.messageCardTitle}>Message Plumber</Text>
+                    <Text style={styles.messageCardSub}>Chat with {job.plumber?.full_name || 'the plumber'}</Text>
+                  </View>
+                  {(unreadCounts[job.id] ?? 0) > 0 ? (
+                    <View style={styles.unreadDot}>
+                      <Text style={styles.unreadDotText}>{unreadCounts[job.id]}</Text>
+                    </View>
+                  ) : (
+                    <Ionicons name="chevron-forward" size={20} color={Colors.grey300} />
+                  )}
+                </View>
+              </TouchableOpacity>
+            )}
 
             {job.status === 'quoted' && job.quote_amount != null && (
               <View style={styles.quoteActionCard}>
@@ -450,6 +483,52 @@ const styles = StyleSheet.create({
   deleteBtnText: {
     ...Typography.label,
     color: Colors.error,
+  },
+  messageCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.card,
+    padding: Spacing.base,
+    marginTop: Spacing.md,
+  },
+  messageCardInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  messageIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.lightBlue,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  messageCardTextWrap: {
+    flex: 1,
+  },
+  messageCardTitle: {
+    ...Typography.label,
+    color: Colors.black,
+    fontWeight: '600',
+  },
+  messageCardSub: {
+    ...Typography.caption,
+    color: Colors.grey500,
+    marginTop: 1,
+  },
+  unreadDot: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  unreadDotText: {
+    ...Typography.caption,
+    color: Colors.white,
+    fontWeight: '700',
   },
   spacer: { height: Spacing.xxl },
 });

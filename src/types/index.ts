@@ -107,6 +107,15 @@ export interface ChatMessage {
   metadata?: TriageMetadata;
 }
 
+export interface JobMessage {
+  id: string;
+  job_id: string;
+  sender_id: string;
+  content: string;
+  read_at: string | null;
+  created_at: string;
+}
+
 export interface Region {
   name: string;
   coordinates: Array<{ latitude: number; longitude: number }>;

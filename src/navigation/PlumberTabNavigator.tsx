@@ -9,6 +9,7 @@ import { DashboardScreen } from '@/screens/plumber/DashboardScreen';
 import { AccountScreen } from '@/screens/plumber/AccountScreen';
 import { EditProfileScreen } from '@/screens/plumber/EditProfileScreen';
 import { BankDetailsScreen } from '@/screens/plumber/BankDetailsScreen';
+import { ChatJobScreen } from '@/screens/shared/ChatJobScreen';
 import type { PlumberTabParamList, PlumberStackParamList } from '@/types/navigation';
 import { Colors } from '@/constants/colors';
 
@@ -70,6 +71,7 @@ export function PlumberTabNavigator() {
       <Stack.Screen name="PlumberTabs" component={PlumberTabs} />
       <Stack.Screen name="JobDetail" component={JobDetailScreen} />
       <Stack.Screen name="EnquiryDetail" component={EnquiryDetailScreen} />
+      <Stack.Screen name="ChatJob" component={ChatJobScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="BankDetails" component={BankDetailsScreen} />
     </Stack.Navigator>

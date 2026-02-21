@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { useEnquiryStore } from '@/store/enquiryStore';
 import { useAuthStore } from '@/store/authStore';
+import { useUnreadCounts } from '@/hooks/useUnreadCounts';
 import { supabase } from '@/lib/supabase';
 import { Colors } from '@/constants/colors';
 import { Spacing } from '@/constants/spacing';
@@ -22,6 +23,7 @@ const SEGMENTS = ['New', 'Active', 'Completed'];
 const ACTIVE_STATUSES: EnquiryStatus[] = ['accepted', 'in_progress'];
 
 interface JobInfo {
+  job_id: string;
   enquiry_id: string;
   status: string;
   quote_amount: number | null;
@@ -32,6 +34,7 @@ export function EnquiriesScreen() {
   const nav = useNavigation<Nav>();
   const profile = useAuthStore((s) => s.profile);
   const { enquiries, isLoading, fetchEnquiries, subscribeToChanges } = useEnquiryStore();
+  const unreadCounts = useUnreadCounts();
   const [activeIndex, setActiveIndex] = useState(0);
   const [jobMap, setJobMap] = useState<Record<string, JobInfo>>({});
 
@@ -39,13 +42,14 @@ export function EnquiriesScreen() {
     if (!profile?.id) return;
     const { data } = await supabase
       .from('jobs')
-      .select('enquiry_id, status, quote_amount, plumber:profiles!jobs_plumber_id_fkey(full_name)')
+      .select('id, enquiry_id, status, quote_amount, plumber:profiles!jobs_plumber_id_fkey(full_name)')
       .eq('customer_id', profile.id);
 
     if (data) {
       const map: Record<string, JobInfo> = {};
       for (const row of data as any[]) {
         map[row.enquiry_id] = {
+          job_id: row.id,
           enquiry_id: row.enquiry_id,
           status: row.status,
           quote_amount: row.quote_amount,
@@ -119,6 +123,7 @@ export function EnquiriesScreen() {
   const renderItem = useCallback(
     ({ item }: { item: Enquiry }) => {
       const jobInfo = jobMap[item.id];
+      const unread = jobInfo?.job_id ? unreadCounts[jobInfo.job_id] ?? 0 : 0;
       return (
         <EnquiryCard
           enquiry={item}
@@ -126,10 +131,11 @@ export function EnquiriesScreen() {
           quoteAmount={jobInfo?.quote_amount}
           plumberName={jobInfo?.plumber_name}
           jobStatus={jobInfo?.status}
+          unreadCount={unread}
         />
       );
     },
-    [nav, jobMap]
+    [nav, jobMap, unreadCounts]
   );
 
   return (

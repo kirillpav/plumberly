@@ -19,6 +19,7 @@ export type CustomerStackParamList = {
   CustomerTabs: NavigatorScreenParams<CustomerTabParamList>;
   NewEnquiry: { transcript?: ChatMessage[]; intakeData?: IntakeData } | undefined;
   EnquiryDetail: { enquiryId: string };
+  ChatJob: { jobId: string; otherPartyName: string };
   EditProfile: undefined;
 };
 
@@ -33,6 +34,7 @@ export type PlumberStackParamList = {
   PlumberTabs: NavigatorScreenParams<PlumberTabParamList>;
   JobDetail: { jobId: string };
   EnquiryDetail: { enquiryId: string };
+  ChatJob: { jobId: string; otherPartyName: string };
   EditProfile: undefined;
   BankDetails: undefined;
 };

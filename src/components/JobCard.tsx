@@ -14,9 +14,10 @@ interface Props {
   onPress: () => void;
   actionLabel?: string;
   onAction?: () => void;
+  unreadCount?: number;
 }
 
-export function JobCard({ job, onPress, actionLabel, onAction }: Props) {
+export function JobCard({ job, onPress, actionLabel, onAction, unreadCount }: Props) {
   const isDeclined = job.status === 'declined';
 
   return (
@@ -67,10 +68,20 @@ export function JobCard({ job, onPress, actionLabel, onAction }: Props) {
           </View>
         )}
 
-        {!isDeclined && actionLabel && onAction && (
-          <TouchableOpacity style={styles.actionBtn} onPress={onAction}>
-            <Text style={styles.actionText}>{actionLabel}</Text>
-          </TouchableOpacity>
+        {!isDeclined && (
+          <View style={styles.footerRight}>
+            {!!unreadCount && unreadCount > 0 && (
+              <View style={styles.unreadBadge}>
+                <Ionicons name="chatbubble" size={12} color={Colors.white} />
+                <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
+              </View>
+            )}
+            {actionLabel && onAction && (
+              <TouchableOpacity style={styles.actionBtn} onPress={onAction}>
+                <Text style={styles.actionText}>{actionLabel}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
       </View>
     </TouchableOpacity>
@@ -159,6 +170,25 @@ const styles = StyleSheet.create({
     ...Typography.label,
     color: Colors.primary,
     fontWeight: '600',
+  },
+  footerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  unreadBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+  },
+  unreadBadgeText: {
+    ...Typography.caption,
+    color: Colors.white,
+    fontWeight: '700',
   },
   actionBtn: {
     backgroundColor: Colors.primary,
