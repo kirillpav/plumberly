@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -92,13 +93,17 @@ export function ChatJobScreen() {
     if (!trimmed || !profile?.id || !recipientId) return;
 
     setText('');
-    await sendMessage({
-      jobId,
-      content: trimmed,
-      senderId: profile.id,
-      recipientId,
-      senderName: profile.full_name || 'Someone',
-    });
+    try {
+      await sendMessage({
+        jobId,
+        content: trimmed,
+        senderId: profile.id,
+        recipientId,
+        senderName: profile.full_name || 'Someone',
+      });
+    } catch {
+      Alert.alert('Message not sent', 'Something went wrong. Please try again.');
+    }
   }, [text, profile, recipientId, jobId, sendMessage]);
 
   const scrollToBottom = useCallback(() => {

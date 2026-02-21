@@ -90,11 +90,12 @@ export const useJobChatStore = create<JobChatState>((set, get) => ({
         body: content.length > 100 ? content.slice(0, 97) + '...' : content,
         data: { jobId, type: 'chat_message' },
       });
-    } catch {
+    } catch (error) {
       set((state) => ({
         messages: state.messages.filter((m) => m.id !== tempId),
         isSending: false,
       }));
+      throw error;
     }
   },
 
@@ -137,8 +138,11 @@ export const useJobChatStore = create<JobChatState>((set, get) => ({
         schema: 'public',
         table: 'job_messages',
         filter: `job_id=eq.${jobId}`,
-      }, () => {
-        set({ messages: [] });
+      }, (payload) => {
+        const deletedId = (payload.old as { id: string }).id;
+        set((state) => ({
+          messages: state.messages.filter((m) => m.id !== deletedId),
+        }));
       })
       .subscribe();
 
