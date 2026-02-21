@@ -18,6 +18,7 @@ import { ChatBubble } from '@/components/ChatBubble';
 import { CompletionIndicator } from '@/components/CompletionIndicator';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { useJobStore } from '@/store/jobStore';
+import { useUnreadCounts } from '@/hooks/useUnreadCounts';
 import { supabase } from '@/lib/supabase';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -25,13 +26,15 @@ import { Spacing, BorderRadius } from '@/constants/spacing';
 import { formatDate } from '@/utils/formatDate';
 import { formatCurrency } from '@/utils/formatCurrency';
 import type { PlumberStackParamList } from '@/types/navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { Job, Enquiry, UserProfile, ChatMessage } from '@/types/index';
 
 export function JobDetailScreen() {
-  const nav = useNavigation();
+  const nav = useNavigation<NativeStackNavigationProp<PlumberStackParamList>>();
   const route = useRoute<RouteProp<PlumberStackParamList, 'JobDetail'>>();
   const { jobId } = route.params;
   const { submitQuote, confirmJobDone, updateJobStatus } = useJobStore();
+  const unreadCounts = useUnreadCounts();
 
   const [job, setJob] = useState<Job | null>(null);
   const [enquiry, setEnquiry] = useState<Enquiry | null>(null);
@@ -233,6 +236,37 @@ export function JobDetailScreen() {
               ))}
             </View>
           </View>
+        )}
+
+        {/* Message Customer */}
+        {(job.status === 'accepted' || job.status === 'in_progress') && (
+          <TouchableOpacity
+            style={styles.messageCard}
+            activeOpacity={0.7}
+            onPress={() =>
+              nav.navigate('ChatJob', {
+                jobId: job.id,
+                otherPartyName: customer?.full_name || 'Customer',
+              })
+            }
+          >
+            <View style={styles.messageCardInner}>
+              <View style={styles.messageIconWrap}>
+                <Ionicons name="chatbubbles" size={20} color={Colors.primary} />
+              </View>
+              <View style={styles.messageCardText}>
+                <Text style={styles.messageCardTitle}>Message Customer</Text>
+                <Text style={styles.messageCardSub}>Chat with {customer?.full_name || 'the customer'}</Text>
+              </View>
+              {(unreadCounts[job.id] ?? 0) > 0 ? (
+                <View style={styles.unreadDot}>
+                  <Text style={styles.unreadDotText}>{unreadCounts[job.id]}</Text>
+                </View>
+              ) : (
+                <Ionicons name="chevron-forward" size={20} color={Colors.grey300} />
+              )}
+            </View>
+          </TouchableOpacity>
         )}
 
         {/* Chat History */}
@@ -547,6 +581,52 @@ const styles = StyleSheet.create({
   dismissBtnText: {
     ...Typography.label,
     color: Colors.grey500,
+  },
+  messageCard: {
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.card,
+    padding: Spacing.base,
+    marginBottom: Spacing.base,
+  },
+  messageCardInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  messageIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.lightBlue,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  messageCardText: {
+    flex: 1,
+  },
+  messageCardTitle: {
+    ...Typography.label,
+    color: Colors.black,
+    fontWeight: '600',
+  },
+  messageCardSub: {
+    ...Typography.caption,
+    color: Colors.grey500,
+    marginTop: 1,
+  },
+  unreadDot: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  unreadDotText: {
+    ...Typography.caption,
+    color: Colors.white,
+    fontWeight: '700',
   },
   spacer: { height: Spacing.xxl },
 });
