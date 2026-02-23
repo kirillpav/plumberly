@@ -1,11 +1,20 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
-import type { ChatMessage, IntakeData } from './index';
+import type { ChatMessage, IntakeData, UserRole } from './index';
+
+// Onboarding
+export type OnboardingStackParamList = {
+  RoleSelection: undefined;
+  OnboardingSlides: { role: UserRole };
+  SignIn: { role: UserRole };
+  CreateAccount: { role: UserRole };
+  PlumberRegistration: { role: UserRole };
+};
 
 // Auth
 export type AuthStackParamList = {
-  SignIn: undefined;
-  CreateAccount: undefined;
-  PlumberRegistration: undefined;
+  SignIn: { role?: UserRole } | undefined;
+  CreateAccount: { role?: UserRole } | undefined;
+  PlumberRegistration: { role?: UserRole } | undefined;
 };
 
 // Customer
@@ -41,6 +50,7 @@ export type PlumberStackParamList = {
 
 // Root
 export type RootStackParamList = {
+  Onboarding: NavigatorScreenParams<OnboardingStackParamList>;
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Customer: NavigatorScreenParams<CustomerStackParamList>;
   Plumber: NavigatorScreenParams<PlumberStackParamList>;

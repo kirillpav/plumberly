@@ -13,6 +13,7 @@ import { validateField } from '@/utils/validation';
 export function CreateAccountScreen() {
   const nav = useNavigation();
   const signUp = useAuthStore((s) => s.signUp);
+  const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,6 +35,7 @@ export function CreateAccountScreen() {
     setLoading(true);
     try {
       await signUp({ email: email.trim(), password, fullName: name.trim(), role: 'customer' });
+      await completeOnboarding();
       Alert.alert('Success', 'Account created! Please check your email to verify.');
     } catch (err: any) {
       Alert.alert('Sign Up Failed', err.message);

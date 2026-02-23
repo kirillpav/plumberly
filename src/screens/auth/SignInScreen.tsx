@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
 import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
 import { InputField } from '@/components/shared/InputField';
 import { PrimaryButton } from '@/components/shared/PrimaryButton';
@@ -10,13 +11,17 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { validateField } from '@/utils/validation';
-import type { AuthStackParamList } from '@/types/navigation';
+import type { AuthStackParamList, OnboardingStackParamList } from '@/types/navigation';
 
-type Nav = NativeStackNavigationProp<AuthStackParamList>;
+type Nav = NativeStackNavigationProp<AuthStackParamList & OnboardingStackParamList>;
 
 export function SignInScreen() {
   const nav = useNavigation<Nav>();
+  const route = useRoute();
+  const params = route.params as { role?: string } | undefined;
+  const selectedRole = params?.role;
   const signIn = useAuthStore((s) => s.signIn);
+  const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,6 +38,7 @@ export function SignInScreen() {
     setLoading(true);
     try {
       await signIn(email.trim(), password);
+      await completeOnboarding();
     } catch (err: any) {
       Alert.alert('Sign In Failed', err.message);
     } finally {
@@ -76,21 +82,29 @@ export function SignInScreen() {
 
           <TouchableOpacity
             style={styles.link}
-            onPress={() => nav.navigate('CreateAccount')}
+            onPress={() => {
+              if (selectedRole === 'plumber') {
+                nav.navigate('PlumberRegistration', { role: 'plumber' } as any);
+              } else {
+                nav.navigate('CreateAccount', { role: selectedRole } as any);
+              }
+            }}
           >
             <Text style={styles.linkText}>
               Don't have an account? <Text style={styles.linkBold}>Create one</Text>
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.link}
-            onPress={() => nav.navigate('PlumberRegistration')}
-          >
-            <Text style={styles.linkText}>
-              Are you a plumber? <Text style={styles.linkBold}>Register here</Text>
-            </Text>
-          </TouchableOpacity>
+          {!selectedRole && (
+            <TouchableOpacity
+              style={styles.link}
+              onPress={() => nav.navigate('PlumberRegistration' as any)}
+            >
+              <Text style={styles.linkText}>
+                Are you a plumber? <Text style={styles.linkBold}>Register here</Text>
+              </Text>
+            </TouchableOpacity>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </ScreenWrapper>
