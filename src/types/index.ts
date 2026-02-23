@@ -8,6 +8,7 @@ export interface UserProfile {
   avatar_url: string | null;
   role: UserRole;
   push_token: string | null;
+  onboarding_complete: boolean;
   created_at: string;
 }
 

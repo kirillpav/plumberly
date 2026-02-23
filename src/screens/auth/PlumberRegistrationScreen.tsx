@@ -15,6 +15,7 @@ const REGIONS = ['North', 'East', 'South', 'West', 'Central'];
 export function PlumberRegistrationScreen() {
   const nav = useNavigation();
   const signUp = useAuthStore((s) => s.signUp);
+  const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -53,6 +54,7 @@ export function PlumberRegistrationScreen() {
         regions: selectedRegions,
         bio: bio.trim() || undefined,
       });
+      await completeOnboarding();
       Alert.alert('Success', 'Registration submitted! Please check your email.');
     } catch (err: any) {
       Alert.alert('Registration Failed', err.message);

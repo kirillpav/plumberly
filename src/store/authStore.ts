@@ -1,7 +1,10 @@
 import { create } from 'zustand';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 import type { UserProfile, UserRole, PlumberDetails } from '@/types/index';
 import type { Session } from '@supabase/supabase-js';
+
+const ONBOARDING_STORAGE_KEY = '@plumberly_onboarding_complete';
 
 const PROFILE_RETRY_DELAY_MS = 1500;
 const PROFILE_MAX_RETRIES = 2;
@@ -11,6 +14,7 @@ interface AuthState {
   profile: UserProfile | null;
   plumberDetails: PlumberDetails | null;
   isLoading: boolean;
+  onboardingComplete: boolean;
   initialize: () => Promise<void>;
   fetchProfile: (userId: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -25,6 +29,7 @@ interface AuthState {
   }) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  completeOnboarding: () => Promise<void>;
 }
 
 async function delay(ms: number) {
@@ -36,13 +41,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   profile: null,
   plumberDetails: null,
   isLoading: true,
+  onboardingComplete: false,
 
   initialize: async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      set({ session });
+      const [{ data: { session } }, storedFlag] = await Promise.all([
+        supabase.auth.getSession(),
+        AsyncStorage.getItem(ONBOARDING_STORAGE_KEY),
+      ]);
+      set({ session, onboardingComplete: storedFlag === 'true' });
       if (session?.user) {
         await get().fetchProfile(session.user.id);
+        // Sync onboarding state from profile if available
+        const profile = get().profile;
+        if (profile?.onboarding_complete) {
+          set({ onboardingComplete: true });
+        }
       }
     } catch (err) {
       console.error('Auth init error:', err);
@@ -106,6 +120,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         phone: (meta.phone as string) ?? null,
         avatar_url: null,
         role: ((meta.role as UserRole) ?? 'customer'),
+        push_token: null,
+        onboarding_complete: false,
         created_at: session.user.created_at ?? new Date().toISOString(),
       };
       console.warn('Using fallback profile from session metadata');
@@ -151,5 +167,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (error) throw error;
     await get().fetchProfile(userId);
+  },
+
+  completeOnboarding: async () => {
+    await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
+    set({ onboardingComplete: true });
+
+    const userId = get().session?.user?.id;
+    if (userId) {
+      await supabase
+        .from('profiles')
+        .update({ onboarding_complete: true })
+        .eq('id', userId);
+      await get().fetchProfile(userId);
+    }
   },
 }));
