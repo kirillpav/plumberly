@@ -277,24 +277,27 @@ export function EnquiryDetailScreen() {
         {activeJob && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Assigned Plumber</Text>
-            <View style={styles.plumberCard}>
-              <Avatar
-                uri={activeJob.plumber?.avatar_url}
-                name={activeJob.plumber?.full_name}
-                size="md"
-              />
-              <View style={styles.plumberInfo}>
-                <Text style={styles.plumberName}>
-                  {activeJob.plumber?.full_name}
-                </Text>
-                {activeJob.quote_amount != null && (
-                  <Text style={styles.quoteAmount}>
-                    Quote: {formatCurrency(activeJob.quote_amount)}
+            <View style={styles.plumberCardAccepted}>
+              <View style={styles.acceptedBadge}>
+                <Ionicons name="checkmark-circle" size={14} color={Colors.white} />
+                <Text style={styles.acceptedBadgeText}>Quote Accepted</Text>
+              </View>
+              <View style={styles.plumberCardRow}>
+                <Avatar
+                  uri={activeJob.plumber?.avatar_url}
+                  name={activeJob.plumber?.full_name}
+                  size="md"
+                />
+                <View style={styles.plumberInfo}>
+                  <Text style={styles.plumberName}>
+                    {activeJob.plumber?.full_name}
                   </Text>
-                )}
-                <Text style={styles.jobStatus}>
-                  Status: {activeJob.status.replace("_", " ")}
-                </Text>
+                  {activeJob.quote_amount != null && (
+                    <Text style={styles.quoteAmountAccepted}>
+                      {formatCurrency(activeJob.quote_amount)}
+                    </Text>
+                  )}
+                </View>
               </View>
             </View>
 
@@ -572,22 +575,39 @@ const styles = StyleSheet.create({
     color: Colors.black,
     marginBottom: Spacing.md,
   },
-  plumberCard: {
-    flexDirection: "row",
+  plumberCardAccepted: {
     backgroundColor: Colors.white,
-    padding: Spacing.base,
     borderRadius: BorderRadius.card,
+    borderWidth: 1.5,
+    borderColor: Colors.success,
+    overflow: "hidden",
+  },
+  acceptedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    backgroundColor: Colors.success,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.sm,
+  },
+  acceptedBadgeText: {
+    ...Typography.caption,
+    color: Colors.white,
+    fontWeight: "700",
+  },
+  plumberCardRow: {
+    flexDirection: "row",
+    padding: Spacing.base,
     gap: Spacing.md,
     alignItems: "center",
   },
   plumberInfo: { flex: 1 },
   plumberName: { ...Typography.label, color: Colors.black },
-  quoteAmount: { ...Typography.bodySmall, color: Colors.primary, marginTop: 2 },
-  jobStatus: {
-    ...Typography.caption,
-    color: Colors.grey500,
+  quoteAmountAccepted: {
+    ...Typography.h3,
+    color: Colors.success,
+    fontWeight: "700",
     marginTop: 2,
-    textTransform: "capitalize",
   },
   quoteCard: {
     backgroundColor: Colors.white,

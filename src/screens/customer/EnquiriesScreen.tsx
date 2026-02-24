@@ -157,6 +157,12 @@ export function EnquiriesScreen() {
         ["in_progress", "completed"].includes(j.status),
       );
 
+      // Compute total unread count across all jobs for this enquiry
+      const totalUnread = jobs.reduce(
+        (sum, j) => sum + (unreadCounts[j.job_id] ?? 0),
+        0,
+      );
+
       // Multi-quote scenario
       if (quotedJobs.length > 0 || pendingJobs.length > 0) {
         const quotedAmounts = quotedJobs
@@ -178,6 +184,7 @@ export function EnquiriesScreen() {
               activeJob?.status ??
               (quotedJobs.length > 0 ? "quoted" : "pending")
             }
+            unreadCount={totalUnread}
           />
         );
       }
@@ -191,6 +198,7 @@ export function EnquiriesScreen() {
           quoteAmount={singleJob?.quote_amount}
           plumberName={singleJob?.plumber_name}
           jobStatus={singleJob?.status}
+          unreadCount={totalUnread}
         />
       );
     },

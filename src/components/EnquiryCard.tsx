@@ -34,6 +34,7 @@ interface Props {
   quoteCount?: number;
   pendingCount?: number;
   lowestQuote?: number | null;
+  unreadCount?: number;
 }
 
 export function EnquiryCard({
@@ -48,6 +49,7 @@ export function EnquiryCard({
   quoteCount,
   pendingCount,
   lowestQuote,
+  unreadCount,
 }: Props) {
   const hasMultipleQuotes = (quoteCount ?? 0) > 0;
   const hasPendingOnly = !hasMultipleQuotes && (pendingCount ?? 0) > 0;
@@ -179,7 +181,14 @@ export function EnquiryCard({
           </TouchableOpacity>
         )}
 
-        {showHighlight && (
+        {!!unreadCount && unreadCount > 0 && (
+          <View style={styles.unreadBadge}>
+            <Ionicons name="chatbubble" size={12} color={Colors.white} />
+            <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
+          </View>
+        )}
+
+        {showHighlight && !unreadCount && (
           <View style={styles.reviewHint}>
             <Text style={styles.reviewHintText}>Review</Text>
             <Ionicons name="chevron-forward" size={14} color={Colors.primary} />

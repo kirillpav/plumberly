@@ -163,7 +163,7 @@ export function ChatJobScreen() {
 
   if (statusLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.primary} />
         </View>
@@ -173,7 +173,7 @@ export function ChatJobScreen() {
 
   if (!chatEnabled) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => nav.goBack()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={Colors.primary} />
@@ -193,7 +193,7 @@ export function ChatJobScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => nav.goBack()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={Colors.primary} />
@@ -258,7 +258,7 @@ export function ChatJobScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.white,
   },
   flex: {
     flex: 1,
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   timeSeparatorText: {
     ...Typography.caption,
     color: Colors.grey500,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.white,
     paddingHorizontal: Spacing.sm,
   },
   bubbleRow: {
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
   bubbleTheirs: {
-    backgroundColor: Colors.white,
+    backgroundColor: '#DCF8C6',
     borderBottomLeftRadius: 4,
   },
   bubbleText: {
@@ -349,6 +349,7 @@ const styles = StyleSheet.create({
     color: Colors.grey500,
     marginTop: 2,
     alignSelf: 'flex-end',
+    fontSize: 11,
   },
   bubbleTimeMine: {
     color: 'rgba(255,255,255,0.7)',
