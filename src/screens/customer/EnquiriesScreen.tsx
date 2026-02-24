@@ -58,6 +58,7 @@ export function EnquiriesScreen() {
       const map: Record<string, JobInfo[]> = {};
       for (const row of data as any[]) {
         const info: JobInfo = {
+          job_id: row.id,
           enquiry_id: row.enquiry_id,
           status: row.status,
           quote_amount: row.quote_amount,

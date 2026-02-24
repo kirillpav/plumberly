@@ -298,14 +298,14 @@ export function EnquiryDetailScreen() {
               </View>
             </View>
 
-            {(job.status === "accepted" || job.status === "in_progress") && (
+            {(activeJob.status === "accepted" || activeJob.status === "in_progress") && (
               <TouchableOpacity
                 style={styles.messageCard}
                 activeOpacity={0.7}
                 onPress={() =>
                   nav.navigate("ChatJob", {
-                    jobId: job.id,
-                    otherPartyName: job.plumber?.full_name || "Plumber",
+                    jobId: activeJob.id,
+                    otherPartyName: activeJob.plumber?.full_name || "Plumber",
                   })
                 }
               >
@@ -320,13 +320,13 @@ export function EnquiryDetailScreen() {
                   <View style={styles.messageCardTextWrap}>
                     <Text style={styles.messageCardTitle}>Message Plumber</Text>
                     <Text style={styles.messageCardSub}>
-                      Chat with {job.plumber?.full_name || "the plumber"}
+                      Chat with {activeJob.plumber?.full_name || "the plumber"}
                     </Text>
                   </View>
-                  {(unreadCounts[job.id] ?? 0) > 0 ? (
+                  {(unreadCounts[activeJob.id] ?? 0) > 0 ? (
                     <View style={styles.unreadDot}>
                       <Text style={styles.unreadDotText}>
-                        {unreadCounts[job.id]}
+                        {unreadCounts[activeJob.id]}
                       </Text>
                     </View>
                   ) : (
@@ -340,84 +340,7 @@ export function EnquiryDetailScreen() {
               </TouchableOpacity>
             )}
 
-            {job.status === "quoted" && job.quote_amount != null && (
-              <View style={styles.quoteActionCard}>
-                <View style={styles.quoteHeader}>
-                  <Ionicons
-                    name="pricetag-outline"
-                    size={20}
-                    color={Colors.primary}
-                  />
-                  <Text style={styles.quoteTitle}>Quote Received</Text>
-                </View>
-                <Text style={styles.quotePriceDisplay}>
-                  {formatCurrency(job.quote_amount)}
-                </Text>
-                {job.scheduled_time && (
-                  <View style={styles.quoteTimeBadge}>
-                    <Ionicons
-                      name="time-outline"
-                      size={14}
-                      color={Colors.primary}
-                    />
-                    <Text style={styles.quoteTimeText}>
-                      Proposed time: {job.scheduled_time}
-                    </Text>
-                  </View>
-                )}
-                <Text style={styles.quoteSubtext}>
-                  Review the quote above. Accept to start the job or decline to
-                  cancel.
-                </Text>
-                <View style={styles.quoteButtons}>
-                  <View style={styles.quoteButtonWrap}>
-                    <SecondaryButton
-                      title="Decline"
-                      onPress={handleDeclineQuote}
-                    />
-                  </View>
-                  <View style={styles.quoteButtonWrap}>
-                    <PrimaryButton
-                      title="Accept Quote"
-                      onPress={handleAcceptQuote}
-                      loading={actionLoading}
-                    />
-                  </View>
-                </View>
-              </View>
-            )}
-
-            {job.status === "declined" && (
-              <View style={styles.declinedBanner}>
-                <Ionicons
-                  name="close-circle-outline"
-                  size={20}
-                  color={Colors.error}
-                />
-                <Text style={styles.declinedText}>
-                  You declined the quote of{" "}
-                  {job.quote_amount != null
-                    ? formatCurrency(job.quote_amount)
-                    : "—"}
-                  . The plumber may send a revised offer.
-                </Text>
-              </View>
-            )}
-
-            {job.status === "pending" && (
-              <View style={styles.waitingBanner}>
-                <Ionicons
-                  name="hourglass-outline"
-                  size={18}
-                  color={Colors.primary}
-                />
-                <Text style={styles.waitingText}>
-                  Plumber is preparing a quote for you
-                </Text>
-              </View>
-            )}
-
-            {(job.status === "in_progress" || job.status === "completed") && (
+            {(activeJob.status === "in_progress" || activeJob.status === "completed") && (
               <View style={styles.completionSection}>
                 <CompletionIndicator
                   customerConfirmed={activeJob.customer_confirmed}
