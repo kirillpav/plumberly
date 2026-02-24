@@ -36,12 +36,6 @@ const PROBLEM_TYPES = [
 
 const LONDON_REGIONS = ['North', 'East', 'South', 'West', 'Central'];
 
-const TIME_SLOTS = [
-  'Morning (8am-12pm)',
-  'Afternoon (12pm-5pm)',
-  'Evening (5pm-8pm)',
-  'Flexible',
-];
 
 type Nav = NativeStackNavigationProp<CustomerStackParamList>;
 
@@ -60,14 +54,15 @@ export function NewEnquiryScreen() {
     intakeData ? generateDescription(intakeData) : ''
   );
   const [region, setRegion] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
-  const [timeSlots, setTimeSlots] = useState<string[]>([]);
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>(intakeData?.photos ?? []);
   const [loading, setLoading] = useState(false);
 
-  const toggleTimeSlot = (slot: string) => {
-    setTimeSlots((prev) =>
-      prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot]
+  const toggleDate = (dateString: string) => {
+    setSelectedDates((prev) =>
+      prev.includes(dateString)
+        ? prev.filter((d) => d !== dateString)
+        : [...prev, dateString].sort()
     );
   };
 
@@ -96,8 +91,8 @@ export function NewEnquiryScreen() {
         title: problemType,
         description,
         region: region || undefined,
-        preferredDate: selectedDate || undefined,
-        preferredTime: timeSlots.length > 0 ? timeSlots : undefined,
+        preferredDate: selectedDates[0] || undefined,
+        preferredTime: selectedDates.length > 0 ? selectedDates : undefined,
         images: uploadedUrls,
         chatbotTranscript: cleanTranscript,
       });
@@ -162,14 +157,13 @@ export function NewEnquiryScreen() {
             ))}
           </View>
 
-          <Text style={styles.label}>Preferred Date</Text>
+          <Text style={styles.label}>Available Days (tap to select multiple)</Text>
           <Calendar
-            onDayPress={(day: { dateString: string }) => setSelectedDate(day.dateString)}
-            markedDates={
-              selectedDate
-                ? { [selectedDate]: { selected: true, selectedColor: Colors.primary } }
-                : {}
-            }
+            onDayPress={(day: { dateString: string }) => toggleDate(day.dateString)}
+            markedDates={selectedDates.reduce(
+              (acc, d) => ({ ...acc, [d]: { selected: true, selectedColor: Colors.primary } }),
+              {} as Record<string, { selected: boolean; selectedColor: string }>
+            )}
             minDate={new Date().toISOString().split('T')[0]}
             theme={{
               todayTextColor: Colors.primary,
@@ -180,22 +174,6 @@ export function NewEnquiryScreen() {
             }}
             style={styles.calendar}
           />
-
-          <Text style={styles.label}>Availability (select all that apply)</Text>
-          <View style={styles.chips}>
-            {TIME_SLOTS.map((t) => {
-              const selected = timeSlots.includes(t);
-              return (
-                <TouchableOpacity
-                  key={t}
-                  style={[styles.chip, selected && styles.chipActive]}
-                  onPress={() => toggleTimeSlot(t)}
-                >
-                  <Text style={[styles.chipText, selected && styles.chipTextActive]}>{t}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
 
           <Text style={styles.label}>Photos (optional)</Text>
           <ImagePickerButton images={images} onImagesChange={setImages} maxCount={3} />

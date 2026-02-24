@@ -40,12 +40,21 @@ export function JobDetailScreen() {
   const [enquiry, setEnquiry] = useState<Enquiry | null>(null);
   const [customer, setCustomer] = useState<UserProfile | null>(null);
   const [quoteInput, setQuoteInput] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
-  const [customTimeframe, setCustomTimeframe] = useState("");
+  const [quoteDescription, setQuoteDescription] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [timeOption, setTimeOption] = useState<"morning" | "afternoon" | "evening" | "custom" | "flexible" | "">("");
+  const [customTime, setCustomTime] = useState("");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const isFlexible = selectedTime.toLowerCase() === "flexible";
+  // Available dates from enquiry's preferred_time (repurposed to store date strings)
+  const availableDates = (enquiry?.preferred_time ?? []).filter((d) =>
+    /^\d{4}-\d{2}-\d{2}$/.test(d)
+  );
+  // Legacy time slots (e.g. "Morning (8am-12pm)") from older enquiries
+  const legacyTimeSlots = (enquiry?.preferred_time ?? []).filter(
+    (d) => !/^\d{4}-\d{2}-\d{2}$/.test(d)
+  );
 
   const loadData = async () => {
     const { data: j } = await supabase
@@ -104,24 +113,39 @@ export function JobDetailScreen() {
       Alert.alert("Invalid", "Please enter a valid quote amount.");
       return;
     }
-    if (isFlexible && !customTimeframe.trim()) {
-      Alert.alert(
-        "Time Required",
-        "Please propose a timeframe for the customer.",
-      );
+    if (!quoteDescription.trim()) {
+      Alert.alert("Description Required", "Please describe what's included in your quote.");
       return;
     }
-    const resolvedTime = isFlexible
-      ? customTimeframe.trim()
-      : selectedTime || undefined;
+    if (availableDates.length > 0 && !selectedDate) {
+      Alert.alert("Date Required", "Please select a day for the job.");
+      return;
+    }
+    if (timeOption === "custom" && !customTime.trim()) {
+      Alert.alert("Time Required", "Please enter a custom time.");
+      return;
+    }
+    const timeLabels: Record<string, string> = {
+      morning: "Morning (8am–12pm)",
+      afternoon: "Afternoon (12pm–5pm)",
+      evening: "Evening (5pm–8pm)",
+      flexible: "Flexible – agree in chat",
+    };
+    const resolvedTime = timeOption === "custom"
+      ? customTime.trim()
+      : timeOption
+        ? timeLabels[timeOption]
+        : undefined;
     setActionLoading(true);
     try {
-      await submitQuote(job.id, amount, resolvedTime);
+      await submitQuote(job.id, amount, quoteDescription.trim(), selectedDate || undefined, resolvedTime);
       setJob({
         ...job,
         status: "quoted",
         quote_amount: amount,
-        scheduled_time: (resolvedTime as string) || null,
+        quote_description: quoteDescription.trim(),
+        scheduled_date: selectedDate || job.scheduled_date,
+        scheduled_time: resolvedTime ?? null,
       });
       Alert.alert(
         "Quote Sent",
@@ -218,15 +242,29 @@ export function JobDetailScreen() {
           {enquiry?.region && (
             <Text style={styles.meta}>Region: {enquiry.region}</Text>
           )}
-          {enquiry?.preferred_date && (
+          {availableDates.length > 0 ? (
+            <View style={styles.chipRow}>
+              <Text style={styles.meta}>Customer available days:</Text>
+              {availableDates.map((d) => (
+                <View key={d} style={styles.infoChip}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={12}
+                    color={Colors.primary}
+                  />
+                  <Text style={styles.infoChipText}>{formatDate(d)}</Text>
+                </View>
+              ))}
+            </View>
+          ) : enquiry?.preferred_date ? (
             <Text style={styles.meta}>
               Date: {formatDate(enquiry.preferred_date)}
             </Text>
-          )}
-          {enquiry?.preferred_time && enquiry.preferred_time.length > 0 && (
+          ) : null}
+          {legacyTimeSlots.length > 0 && (
             <View style={styles.chipRow}>
               <Text style={styles.meta}>Customer availability:</Text>
-              {enquiry.preferred_time.map((slot) => (
+              {legacyTimeSlots.map((slot) => (
                 <View key={slot} style={styles.infoChip}>
                   <Ionicons
                     name="time-outline"
@@ -243,11 +281,24 @@ export function JobDetailScreen() {
               Quote: {formatCurrency(job.quote_amount)}
             </Text>
           )}
+          {job.quote_description && (
+            <Text style={styles.quoteDescriptionText}>
+              Includes: {job.quote_description}
+            </Text>
+          )}
+          {job.scheduled_date && (
+            <View style={[styles.infoChip, { marginTop: Spacing.xs }]}>
+              <Ionicons name="calendar-outline" size={12} color={Colors.primary} />
+              <Text style={styles.infoChipText}>
+                {formatDate(job.scheduled_date)}
+              </Text>
+            </View>
+          )}
           {job.scheduled_time && (
             <View style={[styles.infoChip, { marginTop: Spacing.xs }]}>
               <Ionicons name="time-outline" size={12} color={Colors.primary} />
               <Text style={styles.infoChipText}>
-                Scheduled: {job.scheduled_time}
+                {job.scheduled_time}
               </Text>
             </View>
           )}
@@ -337,29 +388,35 @@ export function JobDetailScreen() {
               placeholder="e.g. 150.00"
             />
 
-            {enquiry?.preferred_time && enquiry.preferred_time.length > 0 && (
+            <InputField
+              label="What's included in this price?"
+              value={quoteDescription}
+              onChangeText={setQuoteDescription}
+              placeholder="e.g. Labour, parts, call-out fee. Any extras will be quoted separately."
+              multiline
+              numberOfLines={3}
+              style={{ height: 80, textAlignVertical: "top" }}
+            />
+
+            {availableDates.length > 0 && (
               <View style={styles.timePickerSection}>
                 <Text style={styles.timePickerLabel}>
-                  Choose your preferred time
+                  Select a day for the job
                 </Text>
                 <View style={styles.chipRow}>
-                  {enquiry.preferred_time.map((slot) => {
-                    const isSelected = selectedTime === slot;
+                  {availableDates.map((d) => {
+                    const isSelected = selectedDate === d;
                     return (
                       <TouchableOpacity
-                        key={slot}
+                        key={d}
                         style={[
                           styles.selectableChip,
                           isSelected && styles.selectableChipActive,
                         ]}
-                        onPress={() => {
-                          setSelectedTime(isSelected ? "" : slot);
-                          if (slot.toLowerCase() !== "flexible")
-                            setCustomTimeframe("");
-                        }}
+                        onPress={() => setSelectedDate(isSelected ? "" : d)}
                       >
                         <Ionicons
-                          name="time-outline"
+                          name="calendar-outline"
                           size={14}
                           color={isSelected ? Colors.white : Colors.primary}
                         />
@@ -369,28 +426,67 @@ export function JobDetailScreen() {
                             isSelected && styles.selectableChipTextActive,
                           ]}
                         >
-                          {slot}
+                          {formatDate(d)}
                         </Text>
                       </TouchableOpacity>
                     );
                   })}
                 </View>
-
-                {isFlexible && (
-                  <View style={styles.flexibleInput}>
-                    <Text style={styles.flexibleLabel}>
-                      Propose a timeframe for the customer
-                    </Text>
-                    <InputField
-                      label=""
-                      value={customTimeframe}
-                      onChangeText={setCustomTimeframe}
-                      placeholder="e.g. Tuesday 2–4pm, or next Thursday morning"
-                    />
-                  </View>
-                )}
               </View>
             )}
+
+            <View style={styles.timePickerSection}>
+              <Text style={styles.timePickerLabel}>Proposed time</Text>
+              <View style={styles.chipRow}>
+                {(["morning", "afternoon", "evening"] as const).map((opt) => {
+                  const labels = { morning: "Morning", afternoon: "Afternoon", evening: "Evening" };
+                  const isSelected = timeOption === opt;
+                  return (
+                    <TouchableOpacity
+                      key={opt}
+                      style={[styles.selectableChip, isSelected && styles.selectableChipActive]}
+                      onPress={() => { setTimeOption(isSelected ? "" : opt); setCustomTime(""); }}
+                    >
+                      <Ionicons name="time-outline" size={14} color={isSelected ? Colors.white : Colors.primary} />
+                      <Text style={[styles.selectableChipText, isSelected && styles.selectableChipTextActive]}>
+                        {labels[opt]}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+                <TouchableOpacity
+                  style={[styles.selectableChip, timeOption === "custom" && styles.selectableChipActive]}
+                  onPress={() => { setTimeOption(timeOption === "custom" ? "" : "custom"); }}
+                >
+                  <Ionicons name="create-outline" size={14} color={timeOption === "custom" ? Colors.white : Colors.primary} />
+                  <Text style={[styles.selectableChipText, timeOption === "custom" && styles.selectableChipTextActive]}>
+                    Custom
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.selectableChip, timeOption === "flexible" && styles.selectableChipActive]}
+                  onPress={() => { setTimeOption(timeOption === "flexible" ? "" : "flexible"); setCustomTime(""); }}
+                >
+                  <Ionicons name="chatbubbles-outline" size={14} color={timeOption === "flexible" ? Colors.white : Colors.primary} />
+                  <Text style={[styles.selectableChipText, timeOption === "flexible" && styles.selectableChipTextActive]}>
+                    Flexible
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {timeOption === "custom" && (
+                <InputField
+                  label=""
+                  value={customTime}
+                  onChangeText={setCustomTime}
+                  placeholder="e.g. 10:00 AM, or 2–4pm"
+                />
+              )}
+              {timeOption === "flexible" && (
+                <Text style={styles.flexibleHint}>
+                  You can agree on a specific time with the customer in chat after the quote is accepted.
+                </Text>
+              )}
+            </View>
 
             <PrimaryButton
               title="Submit Quote"
@@ -475,6 +571,106 @@ export function JobDetailScreen() {
                   : "e.g. 120.00"
               }
             />
+
+            <InputField
+              label="What's included in this price?"
+              value={quoteDescription}
+              onChangeText={setQuoteDescription}
+              placeholder="e.g. Labour, parts, call-out fee. Any extras will be quoted separately."
+              multiline
+              numberOfLines={3}
+              style={{ height: 80, textAlignVertical: "top" }}
+            />
+
+            {availableDates.length > 0 && (
+              <View style={styles.timePickerSection}>
+                <Text style={styles.timePickerLabel}>
+                  Select a day for the job
+                </Text>
+                <View style={styles.chipRow}>
+                  {availableDates.map((d) => {
+                    const isSelected = selectedDate === d;
+                    return (
+                      <TouchableOpacity
+                        key={d}
+                        style={[
+                          styles.selectableChip,
+                          isSelected && styles.selectableChipActive,
+                        ]}
+                        onPress={() => setSelectedDate(isSelected ? "" : d)}
+                      >
+                        <Ionicons
+                          name="calendar-outline"
+                          size={14}
+                          color={isSelected ? Colors.white : Colors.primary}
+                        />
+                        <Text
+                          style={[
+                            styles.selectableChipText,
+                            isSelected && styles.selectableChipTextActive,
+                          ]}
+                        >
+                          {formatDate(d)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            <View style={styles.timePickerSection}>
+              <Text style={styles.timePickerLabel}>Proposed time</Text>
+              <View style={styles.chipRow}>
+                {(["morning", "afternoon", "evening"] as const).map((opt) => {
+                  const labels = { morning: "Morning", afternoon: "Afternoon", evening: "Evening" };
+                  const isSelected = timeOption === opt;
+                  return (
+                    <TouchableOpacity
+                      key={opt}
+                      style={[styles.selectableChip, isSelected && styles.selectableChipActive]}
+                      onPress={() => { setTimeOption(isSelected ? "" : opt); setCustomTime(""); }}
+                    >
+                      <Ionicons name="time-outline" size={14} color={isSelected ? Colors.white : Colors.primary} />
+                      <Text style={[styles.selectableChipText, isSelected && styles.selectableChipTextActive]}>
+                        {labels[opt]}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+                <TouchableOpacity
+                  style={[styles.selectableChip, timeOption === "custom" && styles.selectableChipActive]}
+                  onPress={() => { setTimeOption(timeOption === "custom" ? "" : "custom"); }}
+                >
+                  <Ionicons name="create-outline" size={14} color={timeOption === "custom" ? Colors.white : Colors.primary} />
+                  <Text style={[styles.selectableChipText, timeOption === "custom" && styles.selectableChipTextActive]}>
+                    Custom
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.selectableChip, timeOption === "flexible" && styles.selectableChipActive]}
+                  onPress={() => { setTimeOption(timeOption === "flexible" ? "" : "flexible"); setCustomTime(""); }}
+                >
+                  <Ionicons name="chatbubbles-outline" size={14} color={timeOption === "flexible" ? Colors.white : Colors.primary} />
+                  <Text style={[styles.selectableChipText, timeOption === "flexible" && styles.selectableChipTextActive]}>
+                    Flexible
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {timeOption === "custom" && (
+                <InputField
+                  label=""
+                  value={customTime}
+                  onChangeText={setCustomTime}
+                  placeholder="e.g. 10:00 AM, or 2–4pm"
+                />
+              )}
+              {timeOption === "flexible" && (
+                <Text style={styles.flexibleHint}>
+                  You can agree on a specific time with the customer in chat after the quote is accepted.
+                </Text>
+              )}
+            </View>
 
             <PrimaryButton
               title="Send Revised Quote"
@@ -585,6 +781,11 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     marginTop: Spacing.sm,
   },
+  quoteDescriptionText: {
+    ...Typography.bodySmall,
+    color: Colors.grey700,
+    marginTop: Spacing.xs,
+  },
   statusText: {
     ...Typography.caption,
     color: Colors.grey500,
@@ -661,13 +862,11 @@ const styles = StyleSheet.create({
   selectableChipTextActive: {
     color: Colors.white,
   },
-  flexibleInput: {
-    marginTop: Spacing.md,
-  },
-  flexibleLabel: {
-    ...Typography.label,
-    color: Colors.grey700,
-    marginBottom: Spacing.xs,
+  flexibleHint: {
+    ...Typography.caption,
+    color: Colors.grey500,
+    marginTop: Spacing.sm,
+    fontStyle: "italic",
   },
   declinedCard: {
     backgroundColor: Colors.white,

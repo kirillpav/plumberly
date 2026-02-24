@@ -8,7 +8,7 @@ interface JobState {
   isLoading: boolean;
   fetchJobs: (plumberId?: string) => Promise<void>;
   acceptJob: (enquiryId: string, plumberId: string, customerId: string) => Promise<void>;
-  submitQuote: (jobId: string, amount: number, scheduledTime?: string) => Promise<void>;
+  submitQuote: (jobId: string, amount: number, description: string, scheduledDate?: string, scheduledTime?: string) => Promise<void>;
   acceptQuote: (jobId: string) => Promise<void>;
   confirmJobDone: (jobId: string, role: 'customer' | 'plumber') => Promise<void>;
   updateJobStatus: (jobId: string, status: JobStatus) => Promise<void>;
@@ -79,18 +79,19 @@ export const useJobStore = create<JobState>((set, get) => ({
     });
   },
 
-  submitQuote: async (jobId, amount, scheduledTime) => {
-    // Set scheduled_date from enquiry's preferred_date, or default to today
+  submitQuote: async (jobId, amount, description, scheduledDate, scheduledTime) => {
     const job = get().jobs.find((j) => j.id === jobId);
-    const scheduledDate = job?.enquiry?.preferred_date
+    const resolvedDate = scheduledDate
+      ?? job?.enquiry?.preferred_date
       ?? new Date().toISOString().split('T')[0];
 
     const { error } = await supabase
       .from('jobs')
       .update({
         quote_amount: amount,
+        quote_description: description,
         status: 'quoted',
-        scheduled_date: scheduledDate,
+        scheduled_date: resolvedDate,
         ...(scheduledTime ? { scheduled_time: scheduledTime } : {}),
       })
       .eq('id', jobId);

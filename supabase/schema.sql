@@ -122,6 +122,7 @@ create table public.jobs (
   scheduled_date date,
   scheduled_time text,
   notes text,
+  quote_description text,
   customer_confirmed boolean default false not null,
   plumber_confirmed boolean default false not null,
   created_at timestamptz default now() not null,

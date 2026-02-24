@@ -248,7 +248,8 @@ export function EnquiryDetailScreen() {
               <Text style={styles.detailChipText}>{enquiry.region} London</Text>
             </View>
           )}
-          {enquiry.preferred_date && (
+          {enquiry.preferred_date &&
+            !enquiry.preferred_time?.some((s) => /^\d{4}-\d{2}-\d{2}$/.test(s)) && (
             <View style={styles.detailChip}>
               <Ionicons
                 name="calendar-outline"
@@ -264,11 +265,13 @@ export function EnquiryDetailScreen() {
             enquiry.preferred_time.map((slot) => (
               <View key={slot} style={styles.detailChip}>
                 <Ionicons
-                  name="time-outline"
+                  name="calendar-outline"
                   size={14}
                   color={Colors.primary}
                 />
-                <Text style={styles.detailChipText}>{slot}</Text>
+                <Text style={styles.detailChipText}>
+                  {/^\d{4}-\d{2}-\d{2}$/.test(slot) ? formatDate(slot) : slot}
+                </Text>
               </View>
             ))}
         </View>
@@ -297,9 +300,32 @@ export function EnquiryDetailScreen() {
                       {formatCurrency(activeJob.quote_amount)}
                     </Text>
                   )}
+                  {activeJob.scheduled_date && (
+                    <View style={styles.quoteTimeBadgeInline}>
+                      <Ionicons name="calendar-outline" size={12} color={Colors.statusCompleted} />
+                      <Text style={[styles.quoteTimeTextInline, { color: Colors.statusCompleted }]}>
+                        {formatDate(activeJob.scheduled_date)}
+                      </Text>
+                    </View>
+                  )}
+                  {activeJob.scheduled_time && (
+                    <View style={styles.quoteTimeBadgeInline}>
+                      <Ionicons name="time-outline" size={12} color={Colors.statusCompleted} />
+                      <Text style={[styles.quoteTimeTextInline, { color: Colors.statusCompleted }]}>
+                        {activeJob.scheduled_time}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
+
+            {activeJob.quote_description && (
+              <View style={styles.quoteDescriptionBox}>
+                <Text style={styles.quoteDescriptionLabel}>What's included:</Text>
+                <Text style={styles.quoteDescriptionText}>{activeJob.quote_description}</Text>
+              </View>
+            )}
 
             {(activeJob.status === "accepted" || activeJob.status === "in_progress") && (
               <TouchableOpacity
@@ -395,6 +421,18 @@ export function EnquiryDetailScreen() {
                     <Text style={styles.plumberName}>
                       {job.plumber?.full_name}
                     </Text>
+                    {job.scheduled_date && (
+                      <View style={styles.quoteTimeBadgeInline}>
+                        <Ionicons
+                          name="calendar-outline"
+                          size={12}
+                          color={Colors.primary}
+                        />
+                        <Text style={styles.quoteTimeTextInline}>
+                          {formatDate(job.scheduled_date)}
+                        </Text>
+                      </View>
+                    )}
                     {job.scheduled_time && (
                       <View style={styles.quoteTimeBadgeInline}>
                         <Ionicons
@@ -414,6 +452,12 @@ export function EnquiryDetailScreen() {
                     </Text>
                   )}
                 </View>
+                {job.quote_description && (
+                  <View style={styles.quoteDescriptionBox}>
+                    <Text style={styles.quoteDescriptionLabel}>What's included:</Text>
+                    <Text style={styles.quoteDescriptionText}>{job.quote_description}</Text>
+                  </View>
+                )}
                 <View style={styles.quoteButtons}>
                   <View style={styles.quoteButtonWrap}>
                     <SecondaryButton
@@ -627,6 +671,22 @@ const styles = StyleSheet.create({
     ...Typography.h2,
     color: Colors.primary,
     fontWeight: "700",
+  },
+  quoteDescriptionBox: {
+    backgroundColor: Colors.background,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.sm,
+  },
+  quoteDescriptionLabel: {
+    ...Typography.label,
+    color: Colors.grey700,
+    marginBottom: Spacing.xs,
+  },
+  quoteDescriptionText: {
+    ...Typography.bodySmall,
+    color: Colors.grey700,
   },
   quoteTimeBadgeInline: {
     flexDirection: "row",

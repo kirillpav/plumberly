@@ -58,6 +58,7 @@ export interface Job {
   scheduled_date: string | null;
   scheduled_time: string | null;
   notes: string | null;
+  quote_description: string | null;
   customer_confirmed: boolean;
   plumber_confirmed: boolean;
   created_at: string;
