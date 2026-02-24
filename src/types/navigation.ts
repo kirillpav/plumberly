@@ -1,5 +1,5 @@
-import type { NavigatorScreenParams } from '@react-navigation/native';
-import type { ChatMessage, IntakeData, UserRole } from './index';
+import type { NavigatorScreenParams } from "@react-navigation/native";
+import type { ChatMessage, IntakeData, UserRole } from "./index";
 
 // Onboarding
 export type OnboardingStackParamList = {
@@ -12,9 +12,12 @@ export type OnboardingStackParamList = {
 
 // Auth
 export type AuthStackParamList = {
-  SignIn: { role?: UserRole } | undefined;
-  CreateAccount: { role?: UserRole } | undefined;
-  PlumberRegistration: { role?: UserRole } | undefined;
+  SignIn: undefined;
+  CreateAccount: undefined;
+  PlumberRegistration: undefined;
+  // Kept for OTP screens (currently disabled in navigator)
+  PlumberSignIn: undefined;
+  OtpVerification: { email?: string; phone?: string };
 };
 
 // Customer
@@ -26,7 +29,9 @@ export type CustomerTabParamList = {
 
 export type CustomerStackParamList = {
   CustomerTabs: NavigatorScreenParams<CustomerTabParamList>;
-  NewEnquiry: { transcript?: ChatMessage[]; intakeData?: IntakeData } | undefined;
+  NewEnquiry:
+    | { transcript?: ChatMessage[]; intakeData?: IntakeData }
+    | undefined;
   EnquiryDetail: { enquiryId: string };
   ChatJob: { jobId: string; otherPartyName: string };
   EditProfile: undefined;

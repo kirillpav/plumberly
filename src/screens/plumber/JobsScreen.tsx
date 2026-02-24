@@ -62,7 +62,7 @@ export function JobsScreen() {
 
   const myEnquiryIds = new Set(jobs.map((j) => j.enquiry_id));
   const newEnquiries = enquiries.filter(
-    (e) => (e.status === 'new' || e.status === 'accepted') && !myEnquiryIds.has(e.id)
+    (e) => e.status === 'new' && !myEnquiryIds.has(e.id)
   );
 
   const plumberRegions = useMemo(
@@ -97,7 +97,10 @@ export function JobsScreen() {
     return sections;
   }, [newEnquiries, plumberRegions, hasRegions]);
 
-  const existingJobs = jobs.filter((j) => ['pending', 'quoted', 'declined', 'accepted', 'in_progress'].includes(j.status));
+  const existingJobs = jobs.filter((j) =>
+    ['pending', 'quoted', 'declined', 'accepted', 'in_progress'].includes(j.status) ||
+    (j.status === 'cancelled' && j.notes === 'not_selected')
+  );
   const completedJobs = jobs.filter((j) => j.status === 'completed');
 
   const [acceptingIds, setAcceptingIds] = useState<Set<string>>(new Set());

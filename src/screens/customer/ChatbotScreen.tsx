@@ -145,98 +145,78 @@ export function ChatbotScreen() {
 
   // ——— INTAKE PHASE ———
   if (currentPhase === 'intake') {
-    return (
-      <ScreenWrapper noPadding>
-        <View style={styles.header}>
-          <View style={styles.headerIcon}>
-            <Ionicons name="water" size={16} color={Colors.white} />
-          </View>
-          <View style={styles.headerText}>
-            <Text style={styles.title}>Tell us about your issue</Text>
-            <Text style={styles.subtitle}>Step {intakeStep} of 3</Text>
-          </View>
-        </View>
+    const stepTitles = ['What type of issue?', 'Tell us more', 'Review your details'];
 
-        <View style={styles.stepIndicator}>
-          {[1, 2, 3].map((step) => (
-            <View
-              key={step}
-              style={[
-                styles.stepDot,
-                step <= intakeStep && styles.stepDotActive,
-              ]}
-            />
-          ))}
+    return (
+      <ScreenWrapper noPadding style={{ backgroundColor: Colors.white }}>
+        <View style={styles.intakeHeader}>
+          {intakeStep > 1 && (
+            <TouchableOpacity onPress={handleIntakeBack} style={styles.intakeBackBtn} hitSlop={8}>
+              <Ionicons name="chevron-back" size={22} color={Colors.grey700} />
+            </TouchableOpacity>
+          )}
+          <View style={styles.intakeHeaderCenter}>
+            <Text style={styles.intakeTitle}>{stepTitles[intakeStep - 1]}</Text>
+            <View style={styles.stepIndicator}>
+              {[1, 2, 3].map((step) => (
+                <View
+                  key={step}
+                  style={[
+                    styles.stepDot,
+                    step <= intakeStep && styles.stepDotActive,
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
+          {/* Spacer to balance the back button */}
+          <View style={{ width: intakeStep > 1 ? 22 : 0 }} />
         </View>
 
         <ScrollView
-          style={styles.flex}
+          style={styles.intakeScroll}
           contentContainerStyle={styles.intakeContent}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           {intakeStep === 1 && (
-            <View>
-              <Text style={styles.sectionTitle}>What type of issue?</Text>
-              <IssueTypeSelector
-                selected={selectedIssueType}
-                onSelect={setSelectedIssueType}
-              />
-            </View>
+            <IssueTypeSelector
+              selected={selectedIssueType}
+              onSelect={setSelectedIssueType}
+            />
           )}
 
           {intakeStep === 2 && selectedIssueType && (
-            <View>
-              <TouchableOpacity onPress={handleIntakeBack} style={styles.backBtn}>
-                <Ionicons name="chevron-back" size={20} color={Colors.primary} />
-                <Text style={styles.backText}>Back</Text>
-              </TouchableOpacity>
-              <Text style={styles.sectionTitle}>Tell us more</Text>
-              <DynamicFields
-                issueType={selectedIssueType}
-                whenStarted={whenStarted}
-                onWhenStartedChange={setWhenStarted}
-                fields={fields}
-                onFieldChange={handleFieldChange}
-                photos={photos}
-                onPhotosChange={setPhotos}
-              />
-            </View>
+            <DynamicFields
+              issueType={selectedIssueType}
+              whenStarted={whenStarted}
+              onWhenStartedChange={setWhenStarted}
+              fields={fields}
+              onFieldChange={handleFieldChange}
+              photos={photos}
+              onPhotosChange={setPhotos}
+            />
           )}
 
           {intakeStep === 3 && selectedIssueType && (
-            <View>
-              <TouchableOpacity onPress={handleIntakeBack} style={styles.backBtn}>
-                <Ionicons name="chevron-back" size={20} color={Colors.primary} />
-                <Text style={styles.backText}>Back</Text>
-              </TouchableOpacity>
-              <Text style={styles.sectionTitle}>Review your details</Text>
-              <IntakeSummary
-                issueType={selectedIssueType}
-                whenStarted={whenStarted}
-                fields={fields}
-                photos={photos}
-                onEdit={() => setIntakeStep(2)}
-              />
-            </View>
+            <IntakeSummary
+              issueType={selectedIssueType}
+              whenStarted={whenStarted}
+              fields={fields}
+              photos={photos}
+              onEdit={() => setIntakeStep(2)}
+            />
           )}
         </ScrollView>
 
         <View style={styles.intakeFooter}>
-          {intakeStep === 1 && (
+          {intakeStep < 3 ? (
             <PrimaryButton
-              title="Next"
+              title="Continue"
               onPress={handleIntakeNext}
-              disabled={!selectedIssueType}
+              disabled={intakeStep === 1 ? !selectedIssueType : !isStep2Valid}
             />
-          )}
-          {intakeStep === 2 && (
-            <PrimaryButton
-              title="Next"
-              onPress={handleIntakeNext}
-              disabled={!isStep2Valid}
-            />
-          )}
-          {intakeStep === 3 && (
+          ) : (
             <PrimaryButton title="Start Chat" onPress={handleStartChat} />
           )}
         </View>
@@ -246,7 +226,7 @@ export function ChatbotScreen() {
 
   // ——— CHAT PHASE ———
   return (
-    <ScreenWrapper noPadding>
+    <ScreenWrapper noPadding style={{ backgroundColor: Colors.white }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}
@@ -349,7 +329,8 @@ export function ChatbotScreen() {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: Colors.background },
+  flex: { flex: 1, backgroundColor: Colors.white },
+  // Chat header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -387,51 +368,64 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Intake header
+  intakeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.base,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.md,
+    backgroundColor: Colors.white,
+  },
+  intakeBackBtn: {
+    marginRight: Spacing.sm,
+  },
+  intakeHeaderCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  intakeTitle: {
+    ...Typography.h2,
+    fontWeight: '700',
+    color: Colors.grey900,
+    marginBottom: Spacing.sm,
+  },
   // Step indicator
   stepIndicator: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-    backgroundColor: Colors.white,
+    gap: 6,
   },
   stepDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: Colors.grey300,
   },
   stepDotActive: {
     backgroundColor: Colors.primary,
-    width: 24,
+    width: 20,
+    borderRadius: 3,
   },
   // Intake
+  intakeScroll: {
+    flex: 1,
+    backgroundColor: Colors.white,
+  },
   intakeContent: {
-    padding: Spacing.base,
-    paddingBottom: Spacing.xxl,
-  },
-  sectionTitle: {
-    ...Typography.h2,
-    fontWeight: '700',
-    color: Colors.grey900,
-    marginBottom: Spacing.base,
-  },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: Spacing.base,
-  },
-  backText: {
-    ...Typography.body,
-    color: Colors.primary,
+    paddingHorizontal: Spacing.base,
+    paddingTop: Spacing.base,
+    paddingBottom: 100,
   },
   intakeFooter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: Spacing.base,
-    paddingVertical: Spacing.md,
+    paddingTop: Spacing.md,
+    paddingBottom: Spacing.lg,
     backgroundColor: Colors.white,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.grey100,
   },
   // Chat
   list: {

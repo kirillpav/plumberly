@@ -25,13 +25,14 @@ export function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({});
 
   const handleSignIn = async () => {
-    const emailErr = validateField(email, { required: true, email: true });
-    const passErr = validateField(password, { required: true, minLength: 6 });
-    if (emailErr || passErr) {
-      setErrors({ email: emailErr ?? undefined, password: passErr ?? undefined });
+    const e: Record<string, string | undefined> = {};
+    e.email = validateField(email, { required: true, email: true }) ?? undefined;
+    e.password = validateField(password, { required: true }) ?? undefined;
+    if (Object.values(e).some(Boolean)) {
+      setErrors(e);
       return;
     }
     setErrors({});
@@ -68,14 +69,14 @@ export function SignInScreen() {
             autoComplete="email"
             placeholder="you@example.com"
           />
+
           <InputField
             label="Password"
             value={password}
             onChangeText={setPassword}
             error={errors.password}
             secureTextEntry
-            autoComplete="password"
-            placeholder="Enter your password"
+            placeholder="Your password"
           />
 
           <PrimaryButton title="Sign In" onPress={handleSignIn} loading={loading} />

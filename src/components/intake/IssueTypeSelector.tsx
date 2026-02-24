@@ -38,7 +38,7 @@ export function IssueTypeSelector({ selected, onSelect }: Props) {
             <View style={[styles.iconWrap, isSelected && styles.iconWrapSelected]}>
               <Ionicons
                 name={issueTypeToIcon(type) as any}
-                size={24}
+                size={22}
                 color={isSelected ? Colors.white : Colors.primary}
               />
             </View>
@@ -56,31 +56,27 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.md,
+    justifyContent: 'space-between',
+    rowGap: Spacing.sm,
   },
   card: {
-    width: '47%',
+    width: '48%',
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.card,
-    padding: Spacing.base,
+    paddingVertical: Spacing.md,
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.xs,
     borderWidth: 1.5,
     borderColor: Colors.grey100,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
   },
   cardSelected: {
     borderColor: Colors.primary,
     backgroundColor: Colors.lightBlue,
   },
   iconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: Colors.lightBlue,
     alignItems: 'center',
     justifyContent: 'center',
@@ -89,7 +85,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   label: {
-    ...Typography.label,
+    ...Typography.bodySmall,
     fontWeight: '600',
     color: Colors.grey700,
     textAlign: 'center',

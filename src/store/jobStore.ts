@@ -25,7 +25,7 @@ export const useJobStore = create<JobState>((set, get) => ({
     try {
       let query = supabase
         .from('jobs')
-        .select('*, enquiry:enquiries(*), customer:profiles!customer_id(full_name, avatar_url)')
+        .select('*, enquiry:enquiries(*), customer:profiles!customer_id(full_name, avatar_url), plumber:profiles!plumber_id(full_name, avatar_url)')
         .order('created_at', { ascending: false });
 
       if (plumberId) {
@@ -60,7 +60,6 @@ export const useJobStore = create<JobState>((set, get) => ({
     });
     if (error) throw error;
 
-    await supabase.from('enquiries').update({ status: 'accepted' }).eq('id', enquiryId);
     await get().fetchJobs(plumberId);
 
     // Fetch plumber name for a friendlier notification
@@ -123,12 +122,34 @@ export const useJobStore = create<JobState>((set, get) => ({
       .eq('id', jobId);
     if (error) throw error;
 
-    const job = get().jobs.find((j) => j.id === jobId);
+    // Fetch job directly from DB (store may not be populated on customer side)
+    const { data: job } = await supabase
+      .from('jobs')
+      .select('id, enquiry_id, plumber_id, customer_id')
+      .eq('id', jobId)
+      .single();
+
     if (job) {
       await supabase
         .from('enquiries')
         .update({ status: 'in_progress' })
         .eq('id', job.enquiry_id);
+
+      // Cancel all other active jobs for this enquiry (not already cancelled ones)
+      const { data: otherJobs } = await supabase
+        .from('jobs')
+        .select('id, plumber_id')
+        .eq('enquiry_id', job.enquiry_id)
+        .neq('id', jobId)
+        .in('status', ['pending', 'quoted', 'declined', 'accepted']);
+
+      if (otherJobs && otherJobs.length > 0) {
+        const otherJobIds = otherJobs.map((j) => j.id);
+        await supabase
+          .from('jobs')
+          .update({ status: 'cancelled', notes: 'not_selected' })
+          .in('id', otherJobIds);
+      }
 
       const { data: customer } = await supabase
         .from('profiles')
@@ -144,6 +165,18 @@ export const useJobStore = create<JobState>((set, get) => ({
         body: `${customerName} has accepted your quote. The job is now in progress.`,
         data: { jobId, type: 'quote_accepted' },
       });
+
+      // Notify non-selected plumbers
+      if (otherJobs) {
+        for (const other of otherJobs) {
+          sendPushNotification({
+            recipientUserId: other.plumber_id,
+            title: 'Job Update',
+            body: `${customerName} has selected another plumber for this job.`,
+            data: { jobId: other.id, type: 'not_selected' },
+          });
+        }
+      }
     }
 
     await get().fetchJobs();

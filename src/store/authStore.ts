@@ -27,6 +27,21 @@ interface AuthState {
     regions?: string[];
     bio?: string;
   }) => Promise<void>;
+  sendOtp: (params: {
+    email?: string;
+    phone?: string;
+    shouldCreateUser: boolean;
+    fullName?: string;
+    role?: UserRole;
+    plumberPhone?: string;
+    regions?: string[];
+    bio?: string;
+  }) => Promise<void>;
+  verifyOtp: (params: {
+    email?: string;
+    phone?: string;
+    token: string;
+  }) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   completeOnboarding: () => Promise<void>;
@@ -148,6 +163,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         },
       },
     });
+    if (error) throw error;
+  },
+
+  sendOtp: async ({ email, phone, shouldCreateUser, fullName, role, plumberPhone, regions, bio }) => {
+    const options: { shouldCreateUser: boolean; data?: Record<string, unknown> } = { shouldCreateUser };
+    if (shouldCreateUser && fullName) {
+      options.data = {
+        full_name: fullName,
+        role: role ?? 'customer',
+        ...(plumberPhone ? { phone: plumberPhone } : {}),
+        ...(regions ? { regions } : {}),
+        ...(bio ? { bio } : {}),
+      };
+    }
+    const params = email
+      ? { email, options }
+      : { phone: phone!, options };
+    const { error } = await supabase.auth.signInWithOtp(params);
+    if (error) throw error;
+  },
+
+  verifyOtp: async ({ email, phone, token }) => {
+    const params = email
+      ? { email, token, type: 'email' as const }
+      : { phone: phone!, token, type: 'sms' as const };
+    const { error } = await supabase.auth.verifyOtp(params);
     if (error) throw error;
   },
 

@@ -1,12 +1,18 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
-import { Spacing, BorderRadius } from '@/constants/spacing';
-import { formatDate } from '@/utils/formatDate';
-import { formatCurrency } from '@/utils/formatCurrency';
-import type { Enquiry } from '@/types/index';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Colors } from "@/constants/colors";
+import { Typography } from "@/constants/typography";
+import { Spacing, BorderRadius } from "@/constants/spacing";
+import { formatDate } from "@/utils/formatDate";
+import { formatCurrency } from "@/utils/formatCurrency";
+import type { Enquiry } from "@/types/index";
 
 const statusColors: Record<string, string> = {
   new: Colors.statusNew,
@@ -25,7 +31,9 @@ interface Props {
   quoteAmount?: number | null;
   plumberName?: string | null;
   jobStatus?: string | null;
-  unreadCount?: number;
+  quoteCount?: number;
+  pendingCount?: number;
+  lowestQuote?: number | null;
 }
 
 export function EnquiryCard({
@@ -37,24 +45,62 @@ export function EnquiryCard({
   quoteAmount,
   plumberName,
   jobStatus,
-  unreadCount,
+  quoteCount,
+  pendingCount,
+  lowestQuote,
 }: Props) {
-  const hasQuote = jobStatus === 'quoted' && quoteAmount != null;
-  const isPending = jobStatus === 'pending';
+  const hasMultipleQuotes = (quoteCount ?? 0) > 0;
+  const hasPendingOnly = !hasMultipleQuotes && (pendingCount ?? 0) > 0;
+  const hasSingleQuote =
+    !hasMultipleQuotes &&
+    !hasPendingOnly &&
+    jobStatus === "quoted" &&
+    quoteAmount != null;
+  const isPending =
+    !hasMultipleQuotes && !hasPendingOnly && jobStatus === "pending";
+  const showHighlight = hasMultipleQuotes || hasSingleQuote;
 
   return (
     <TouchableOpacity
-      style={[styles.card, hasQuote && styles.cardHighlight]}
+      style={[styles.card, showHighlight && styles.cardHighlight]}
       onPress={onPress}
       activeOpacity={0.7}
     >
-      {hasQuote && (
+      {hasMultipleQuotes && (
+        <View style={styles.quoteBanner}>
+          <View style={styles.quoteBannerLeft}>
+            <View style={styles.quoteDot} />
+            <Text style={styles.quoteBannerLabel}>
+              {quoteCount} {quoteCount === 1 ? "quote" : "quotes"} received
+            </Text>
+          </View>
+          {lowestQuote != null && (
+            <Text style={styles.quoteBannerAmount}>
+              from {formatCurrency(lowestQuote)}
+            </Text>
+          )}
+        </View>
+      )}
+
+      {hasPendingOnly && (
+        <View style={styles.pendingBanner}>
+          <Ionicons name="hourglass-outline" size={14} color={Colors.primary} />
+          <Text style={styles.pendingBannerText}>
+            {pendingCount} plumber{pendingCount !== 1 ? "s" : ""} preparing
+            quotes
+          </Text>
+        </View>
+      )}
+
+      {hasSingleQuote && (
         <View style={styles.quoteBanner}>
           <View style={styles.quoteBannerLeft}>
             <View style={styles.quoteDot} />
             <Text style={styles.quoteBannerLabel}>Quote received</Text>
           </View>
-          <Text style={styles.quoteBannerAmount}>{formatCurrency(quoteAmount!)}</Text>
+          <Text style={styles.quoteBannerAmount}>
+            {formatCurrency(quoteAmount!)}
+          </Text>
         </View>
       )}
 
@@ -62,7 +108,9 @@ export function EnquiryCard({
         <View style={styles.pendingBanner}>
           <Ionicons name="hourglass-outline" size={14} color={Colors.primary} />
           <Text style={styles.pendingBannerText}>
-            {plumberName ? `${plumberName} is preparing a quote` : 'A plumber is preparing a quote'}
+            {plumberName
+              ? `${plumberName} is preparing a quote`
+              : "A plumber is preparing a quote"}
           </Text>
         </View>
       )}
@@ -77,7 +125,9 @@ export function EnquiryCard({
             { backgroundColor: statusColors[enquiry.status] ?? Colors.grey500 },
           ]}
         >
-          <Text style={styles.badgeText}>{enquiry.status.replace('_', ' ')}</Text>
+          <Text style={styles.badgeText}>
+            {enquiry.status.replace("_", " ")}
+          </Text>
         </View>
       </View>
 
@@ -90,7 +140,11 @@ export function EnquiryCard({
       <View style={styles.footer}>
         {enquiry.region && (
           <View style={styles.meta}>
-            <Ionicons name="location-outline" size={14} color={Colors.grey500} />
+            <Ionicons
+              name="location-outline"
+              size={14}
+              color={Colors.grey500}
+            />
             <Text style={styles.metaText}>{enquiry.region}</Text>
           </View>
         )}
@@ -125,14 +179,7 @@ export function EnquiryCard({
           </TouchableOpacity>
         )}
 
-        {!!unreadCount && unreadCount > 0 && (
-          <View style={styles.unreadBadge}>
-            <Ionicons name="chatbubble" size={12} color={Colors.white} />
-            <Text style={styles.unreadBadgeText}>{unreadCount}</Text>
-          </View>
-        )}
-
-        {hasQuote && (
+        {showHighlight && (
           <View style={styles.reviewHint}>
             <Text style={styles.reviewHintText}>Review</Text>
             <Ionicons name="chevron-forward" size={14} color={Colors.primary} />
@@ -155,9 +202,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   quoteBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: Colors.lightBlue,
     marginHorizontal: -Spacing.base,
     marginTop: -Spacing.base,
@@ -168,8 +215,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: BorderRadius.card,
   },
   quoteBannerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.sm,
   },
   quoteDot: {
@@ -181,18 +228,18 @@ const styles = StyleSheet.create({
   quoteBannerLabel: {
     ...Typography.label,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   quoteBannerAmount: {
     ...Typography.h3,
     color: Colors.primary,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   pendingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.sm,
-    backgroundColor: '#FFF8EB',
+    backgroundColor: "#FFF8EB",
     marginHorizontal: -Spacing.base,
     marginTop: -Spacing.base,
     marginBottom: Spacing.md,
@@ -204,12 +251,12 @@ const styles = StyleSheet.create({
   pendingBannerText: {
     ...Typography.caption,
     color: Colors.warning,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: Spacing.sm,
   },
   title: {
@@ -226,7 +273,7 @@ const styles = StyleSheet.create({
   badgeText: {
     ...Typography.caption,
     color: Colors.white,
-    textTransform: 'capitalize',
+    textTransform: "capitalize",
   },
   description: {
     ...Typography.bodySmall,
@@ -234,13 +281,13 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: Spacing.base,
   },
   meta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
   metaText: {
@@ -248,13 +295,13 @@ const styles = StyleSheet.create({
     color: Colors.grey500,
   },
   acceptBtn: {
-    marginLeft: 'auto',
+    marginLeft: "auto",
     backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.base,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.button,
     minWidth: 80,
-    alignItems: 'center' as const,
+    alignItems: "center" as const,
   },
   acceptBtnDisabled: {
     opacity: 0.6,
@@ -264,29 +311,29 @@ const styles = StyleSheet.create({
     color: Colors.white,
   },
   unreadBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 3,
     backgroundColor: Colors.primary,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
     borderRadius: BorderRadius.full,
-    marginLeft: 'auto',
+    marginLeft: "auto",
   },
   unreadBadgeText: {
     ...Typography.caption,
     color: Colors.white,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   reviewHint: {
-    marginLeft: 'auto',
-    flexDirection: 'row',
-    alignItems: 'center',
+    marginLeft: "auto",
+    flexDirection: "row",
+    alignItems: "center",
     gap: 2,
   },
   reviewHintText: {
     ...Typography.label,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

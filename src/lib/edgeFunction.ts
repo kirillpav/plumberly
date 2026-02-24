@@ -1,6 +1,5 @@
 import type { IntakeData, TriageMetadata, ChatMessage } from '@/types/index';
 import { Config } from '@/constants/config';
-import { useAuthStore } from '@/store/authStore';
 
 interface ChatTriageResponse {
   message: string;
@@ -14,12 +13,6 @@ const FALLBACK_RESPONSE: ChatTriageResponse = {
 
 const TIMEOUT_MS = 30_000;
 
-function getAccessToken(): string {
-  // Read token directly from Zustand store to avoid the getSession() deadlock
-  const token = useAuthStore.getState().session?.access_token;
-  return token ?? Config.supabase.anonKey;
-}
-
 export async function callChatTriage(
   intakeData: IntakeData,
   messages: ChatMessage[],
@@ -31,33 +24,31 @@ export async function callChatTriage(
       content: m.content,
     }));
 
-    const token = await getAccessToken();
     const url = `${Config.supabase.url}/functions/v1/chat-triage`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
     try {
+      console.log('[callChatTriage] Calling edge function...');
       const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          apikey: Config.supabase.anonKey,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ intakeData, messages: apiMessages, stateSummary }),
         signal: controller.signal,
       });
 
+      console.log('[callChatTriage] Response status:', response.status);
       const json = await response.json();
 
-      if (json.error) {
-        console.error('[callChatTriage] Edge function error:', json.error);
+      if (!response.ok) {
+        console.error('[callChatTriage] Error:', response.status, JSON.stringify(json));
+        return FALLBACK_RESPONSE;
       }
 
       return {
-        message: json.message,
-        metadata: json.metadata,
+        message: json?.message ?? FALLBACK_RESPONSE.message,
+        metadata: json?.metadata ?? FALLBACK_RESPONSE.metadata,
       };
     } finally {
       clearTimeout(timeoutId);
@@ -65,12 +56,9 @@ export async function callChatTriage(
   } catch (err: any) {
     if (err.name === 'AbortError') {
       console.error('[callChatTriage] Timed out after 30s');
-      return {
-        message: 'The request timed out. Please try again.',
-        metadata: { isEmergency: false, category: 3, confidence: 0, modelUsed: 'error' },
-      };
+    } else {
+      console.error('[callChatTriage] Error:', err.message ?? err);
     }
-    console.error('[callChatTriage] Error:', err.message ?? err);
     return FALLBACK_RESPONSE;
   }
 }

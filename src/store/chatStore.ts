@@ -56,7 +56,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({
         messages: [initialMessage, assistantMessage],
         triageMetadata: response.metadata,
-        stateSummary: `Issue: ${summary}. AI responded with category ${response.metadata.category} assessment.`,
+        stateSummary: `Issue: ${summary}. AI responded with category ${response.metadata?.category ?? 3} assessment.`,
       });
     } catch (err) {
       console.error('Initial chat error:', err);

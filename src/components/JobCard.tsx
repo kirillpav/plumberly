@@ -19,13 +19,21 @@ interface Props {
 
 export function JobCard({ job, onPress, actionLabel, onAction, unreadCount }: Props) {
   const isDeclined = job.status === 'declined';
+  const isNotSelected = job.status === 'cancelled' && job.notes === 'not_selected';
 
   return (
     <TouchableOpacity
-      style={[styles.card, isDeclined && styles.cardDeclined]}
+      style={[styles.card, isDeclined && styles.cardDeclined, isNotSelected && styles.cardNotSelected]}
       onPress={onPress}
       activeOpacity={0.7}
     >
+      {isNotSelected && (
+        <View style={styles.notSelectedBanner}>
+          <Ionicons name="information-circle" size={14} color={Colors.grey500} />
+          <Text style={styles.notSelectedBannerText}>Not selected</Text>
+        </View>
+      )}
+
       {isDeclined && (
         <View style={styles.declinedBanner}>
           <Ionicons name="close-circle" size={14} color={Colors.error} />
@@ -98,6 +106,27 @@ const styles = StyleSheet.create({
   cardDeclined: {
     borderWidth: 1.5,
     borderColor: Colors.error,
+  },
+  cardNotSelected: {
+    opacity: 0.7,
+  },
+  notSelectedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.grey100,
+    marginHorizontal: -Spacing.base,
+    marginTop: -Spacing.base,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.sm,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
+  },
+  notSelectedBannerText: {
+    ...Typography.caption,
+    color: Colors.grey500,
+    fontWeight: '600',
   },
   declinedBanner: {
     flexDirection: 'row',
