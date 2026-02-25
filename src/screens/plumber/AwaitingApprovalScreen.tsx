@@ -9,7 +9,7 @@ import { Typography } from "@/constants/typography";
 import { Spacing } from "@/constants/spacing";
 
 export function AwaitingApprovalScreen() {
-  const { signOut, session, fetchProfile } = useAuthStore();
+  const { signOut, session, fetchProfile, plumberDetails } = useAuthStore();
 
   const handleRefresh = async () => {
     if (session?.user?.id) {
@@ -17,23 +17,41 @@ export function AwaitingApprovalScreen() {
     }
   };
 
+  const isFrozen = plumberDetails?.status === 'frozen';
+  const isSuspended = plumberDetails?.status === 'suspended';
+
+  const icon = isFrozen || isSuspended ? 'warning-outline' : 'hourglass-outline';
+  const iconColor = isFrozen || isSuspended ? Colors.error : Colors.primary;
+
+  const title = isFrozen
+    ? 'Account Frozen'
+    : isSuspended
+      ? 'Account Suspended'
+      : 'Awaiting Approval';
+
+  const subtitle = isFrozen
+    ? plumberDetails?.frozen_reason
+      ? `Your account has been frozen: ${plumberDetails.frozen_reason}. Please contact support for assistance.`
+      : 'Your account has been frozen. Please contact support for assistance.'
+    : isSuspended
+      ? 'Your account has been suspended. Please contact support to resolve this issue.'
+      : 'Your plumber account is being reviewed. We\'ll verify your details and approve your account shortly. Once approved, you\'ll have full access to receive enquiries and send quotes.';
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <View style={styles.iconWrap}>
-          <Ionicons name="hourglass-outline" size={48} color={Colors.primary} />
+        <View style={[styles.iconWrap, (isFrozen || isSuspended) && styles.iconWrapError]}>
+          <Ionicons name={icon} size={48} color={iconColor} />
         </View>
-        <Text style={styles.title}>Awaiting Approval</Text>
-        <Text style={styles.subtitle}>
-          Your plumber account is being reviewed. We'll verify your details and
-          approve your account shortly. Once approved, you'll have full access to
-          receive enquiries and send quotes.
-        </Text>
-        <PrimaryButton
-          title="Check Status"
-          onPress={handleRefresh}
-          style={styles.button}
-        />
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.subtitle}>{subtitle}</Text>
+        {!isFrozen && !isSuspended && (
+          <PrimaryButton
+            title="Check Status"
+            onPress={handleRefresh}
+            style={styles.button}
+          />
+        )}
         <PrimaryButton
           title="Sign Out"
           onPress={signOut}
@@ -63,6 +81,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: Spacing.xl,
+  },
+  iconWrapError: {
+    backgroundColor: '#FDECEA',
   },
   title: {
     ...Typography.h1,

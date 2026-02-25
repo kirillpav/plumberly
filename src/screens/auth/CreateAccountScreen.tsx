@@ -25,7 +25,6 @@ type Nav = NativeStackNavigationProp<AuthStackParamList>;
 export function CreateAccountScreen() {
   const nav = useNavigation<Nav>();
   const signUp = useAuthStore((s) => s.signUp);
-  const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

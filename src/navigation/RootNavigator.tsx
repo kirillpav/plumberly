@@ -3,7 +3,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/store/authStore';
 import { AuthNavigator } from './AuthNavigator';
-import { OnboardingNavigator } from './OnboardingNavigator';
 import { CustomerTabNavigator } from './CustomerTabNavigator';
 import { PlumberTabNavigator } from './PlumberTabNavigator';
 import { AwaitingApprovalScreen } from '@/screens/plumber/AwaitingApprovalScreen';
@@ -13,7 +12,7 @@ import { Colors } from '@/constants/colors';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
-  const { session, profile, plumberDetails, isLoading, onboardingComplete } = useAuthStore();
+  const { session, profile, plumberDetails, isLoading } = useAuthStore();
 
   if (isLoading) {
     return (
@@ -23,20 +22,11 @@ export function RootNavigator() {
     );
   }
 
-  const needsOnboarding = () => {
-    if (session && profile?.onboarding_complete) return false;
-    if (session && !profile?.onboarding_complete) return true;
-    if (!session && onboardingComplete) return false;
-    return true; // !session && !onboardingComplete
-  };
-
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {needsOnboarding() ? (
-        <Stack.Screen name="Onboarding" component={OnboardingNavigator} />
-      ) : !session ? (
+      {!session ? (
         <Stack.Screen name="Auth" component={AuthNavigator} />
-      ) : profile?.role === 'plumber' && !plumberDetails?.verified ? (
+      ) : profile?.role === 'plumber' && (!plumberDetails?.verified || plumberDetails?.status === 'frozen' || plumberDetails?.status === 'suspended') ? (
         <Stack.Screen name="Plumber" component={AwaitingApprovalScreen} />
       ) : profile?.role === 'plumber' ? (
         <Stack.Screen name="Plumber" component={PlumberTabNavigator} />

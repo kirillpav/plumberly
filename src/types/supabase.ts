@@ -34,6 +34,16 @@ export interface Database {
           verified: boolean;
           rating: number;
           jobs_completed: number;
+          business_name: string;
+          services_type: 'gas' | 'no_gas';
+          gas_safe_number: string | null;
+          gas_safe_verified: boolean;
+          consent_to_checks: boolean;
+          right_to_work: string | null;
+          status: 'provisional' | 'active' | 'frozen' | 'suspended';
+          provisional_jobs_remaining: number;
+          payouts_enabled: boolean;
+          frozen_reason: string | null;
         };
         Insert: {
           id?: string;
@@ -44,6 +54,16 @@ export interface Database {
           verified?: boolean;
           rating?: number;
           jobs_completed?: number;
+          business_name?: string;
+          services_type?: 'gas' | 'no_gas';
+          gas_safe_number?: string | null;
+          gas_safe_verified?: boolean;
+          consent_to_checks?: boolean;
+          right_to_work?: string | null;
+          status?: 'provisional' | 'active' | 'frozen' | 'suspended';
+          provisional_jobs_remaining?: number;
+          payouts_enabled?: boolean;
+          frozen_reason?: string | null;
         };
         Update: Partial<Database['public']['Tables']['plumber_details']['Insert']>;
       };

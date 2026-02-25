@@ -17,6 +17,9 @@ export interface PlumberProfile extends UserProfile {
   plumber_details: PlumberDetails;
 }
 
+export type PlumberStatus = 'provisional' | 'active' | 'frozen' | 'suspended';
+export type ServicesType = 'gas' | 'no_gas';
+
 export interface PlumberDetails {
   id: string;
   user_id: string;
@@ -26,6 +29,16 @@ export interface PlumberDetails {
   verified: boolean;
   rating: number;
   jobs_completed: number;
+  business_name: string;
+  services_type: ServicesType;
+  gas_safe_number: string | null;
+  gas_safe_verified: boolean;
+  consent_to_checks: boolean;
+  right_to_work: string | null;
+  status: PlumberStatus;
+  provisional_jobs_remaining: number;
+  payouts_enabled: boolean;
+  frozen_reason: string | null;
 }
 
 export type EnquiryStatus = 'new' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';

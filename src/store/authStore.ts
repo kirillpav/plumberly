@@ -1,10 +1,7 @@
 import { create } from 'zustand';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
-import type { UserProfile, UserRole, PlumberDetails } from '@/types/index';
+import type { UserProfile, UserRole, PlumberDetails, ServicesType } from '@/types/index';
 import type { Session } from '@supabase/supabase-js';
-
-const ONBOARDING_STORAGE_KEY = '@plumberly_onboarding_complete';
 
 const PROFILE_RETRY_DELAY_MS = 1500;
 const PROFILE_MAX_RETRIES = 2;
@@ -14,7 +11,6 @@ interface AuthState {
   profile: UserProfile | null;
   plumberDetails: PlumberDetails | null;
   isLoading: boolean;
-  onboardingComplete: boolean;
   initialize: () => Promise<void>;
   fetchProfile: (userId: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -26,6 +22,11 @@ interface AuthState {
     phone?: string;
     regions?: string[];
     bio?: string;
+    businessName?: string;
+    servicesType?: ServicesType;
+    gasSafeNumber?: string;
+    consentToChecks?: boolean;
+    rightToWork?: string;
   }) => Promise<void>;
   sendOtp: (params: {
     email?: string;
@@ -36,6 +37,11 @@ interface AuthState {
     plumberPhone?: string;
     regions?: string[];
     bio?: string;
+    businessName?: string;
+    servicesType?: ServicesType;
+    gasSafeNumber?: string;
+    consentToChecks?: boolean;
+    rightToWork?: string;
   }) => Promise<void>;
   verifyOtp: (params: {
     email?: string;
@@ -44,7 +50,6 @@ interface AuthState {
   }) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
-  completeOnboarding: () => Promise<void>;
 }
 
 async function delay(ms: number) {
@@ -56,22 +61,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   profile: null,
   plumberDetails: null,
   isLoading: true,
-  onboardingComplete: false,
 
   initialize: async () => {
     try {
-      const [{ data: { session } }, storedFlag] = await Promise.all([
-        supabase.auth.getSession(),
-        AsyncStorage.getItem(ONBOARDING_STORAGE_KEY),
-      ]);
-      set({ session, onboardingComplete: storedFlag === 'true' });
+      const { data: { session } } = await supabase.auth.getSession();
+      set({ session });
       if (session?.user) {
         await get().fetchProfile(session.user.id);
-        // Sync onboarding state from profile if available
-        const profile = get().profile;
-        if (profile?.onboarding_complete) {
-          set({ onboardingComplete: true });
-        }
       }
     } catch (err) {
       console.error('Auth init error:', err);
@@ -149,7 +145,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (error) throw error;
   },
 
-  signUp: async ({ email, password, fullName, role, phone, regions, bio }) => {
+  signUp: async ({ email, password, fullName, role, phone, regions, bio, businessName, servicesType, gasSafeNumber, consentToChecks, rightToWork }) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -160,13 +156,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           phone,
           regions,
           bio,
+          ...(businessName ? { business_name: businessName } : {}),
+          ...(servicesType ? { services_type: servicesType } : {}),
+          ...(gasSafeNumber ? { gas_safe_number: gasSafeNumber } : {}),
+          ...(consentToChecks !== undefined ? { consent_to_checks: consentToChecks } : {}),
+          ...(rightToWork ? { right_to_work: rightToWork } : {}),
         },
       },
     });
     if (error) throw error;
   },
 
-  sendOtp: async ({ email, phone, shouldCreateUser, fullName, role, plumberPhone, regions, bio }) => {
+  sendOtp: async ({ email, phone, shouldCreateUser, fullName, role, plumberPhone, regions, bio, businessName, servicesType, gasSafeNumber, consentToChecks, rightToWork }) => {
     const options: { shouldCreateUser: boolean; data?: Record<string, unknown> } = { shouldCreateUser };
     if (shouldCreateUser && fullName) {
       options.data = {
@@ -175,6 +176,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         ...(plumberPhone ? { phone: plumberPhone } : {}),
         ...(regions ? { regions } : {}),
         ...(bio ? { bio } : {}),
+        ...(businessName ? { business_name: businessName } : {}),
+        ...(servicesType ? { services_type: servicesType } : {}),
+        ...(gasSafeNumber ? { gas_safe_number: gasSafeNumber } : {}),
+        ...(consentToChecks !== undefined ? { consent_to_checks: consentToChecks } : {}),
+        ...(rightToWork ? { right_to_work: rightToWork } : {}),
       };
     }
     const params = email
@@ -208,19 +214,5 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     if (error) throw error;
     await get().fetchProfile(userId);
-  },
-
-  completeOnboarding: async () => {
-    await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, 'true');
-    set({ onboardingComplete: true });
-
-    const userId = get().session?.user?.id;
-    if (userId) {
-      await supabase
-        .from('profiles')
-        .update({ onboarding_complete: true })
-        .eq('id', userId);
-      await get().fetchProfile(userId);
-    }
   },
 }));

@@ -7,7 +7,7 @@ import {
   Dimensions,
   ViewToken,
 } from 'react-native';
-import { useNavigation, useRoute, CommonActions } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -91,7 +91,6 @@ export function OnboardingSlidesScreen() {
   const slides = role === 'plumber' ? PLUMBER_SLIDES : CUSTOMER_SLIDES;
 
   const session = useAuthStore((s) => s.session);
-  const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
 
   const flatListRef = useRef<FlatList>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -116,18 +115,7 @@ export function OnboardingSlidesScreen() {
     }
 
     // Last slide — "Get Started"
-    if (session) {
-      // User already has a session but hasn't completed onboarding
-      await completeOnboarding();
-      nav.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'MainApp' as any }],
-        }),
-      );
-    } else {
-      nav.navigate('SignIn', { role });
-    }
+    nav.navigate('SignIn', { role });
   };
 
   const renderSlide = ({ item }: { item: Slide }) => (

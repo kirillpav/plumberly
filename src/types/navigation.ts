@@ -55,7 +55,6 @@ export type PlumberStackParamList = {
 
 // Root
 export type RootStackParamList = {
-  Onboarding: NavigatorScreenParams<OnboardingStackParamList>;
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Customer: NavigatorScreenParams<CustomerStackParamList>;
   Plumber: NavigatorScreenParams<PlumberStackParamList>;

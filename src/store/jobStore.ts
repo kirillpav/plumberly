@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 import { sendPushNotification } from '@/lib/notifications';
-import type { Job, JobStatus } from '@/types/index';
+import type { Job, JobStatus, PlumberDetails } from '@/types/index';
 
 interface JobState {
   jobs: Job[];
@@ -43,6 +43,23 @@ export const useJobStore = create<JobState>((set, get) => ({
   },
 
   acceptJob: async (enquiryId, plumberId, customerId) => {
+    // Safety gate: check plumber status before accepting
+    const { data: plumberDetails, error: detailsError } = await supabase
+      .from('plumber_details')
+      .select('status, services_type, gas_safe_verified')
+      .eq('user_id', plumberId)
+      .single();
+
+    if (detailsError || !plumberDetails) {
+      throw new Error('Unable to verify your account status. Please try again.');
+    }
+    if (plumberDetails.status === 'frozen') {
+      throw new Error('Your account is currently frozen. Please contact support.');
+    }
+    if (plumberDetails.status === 'suspended') {
+      throw new Error('Your account is suspended. Please contact support.');
+    }
+
     const { data: existing } = await supabase
       .from('jobs')
       .select('id')
@@ -82,7 +99,18 @@ export const useJobStore = create<JobState>((set, get) => ({
   },
 
   submitQuote: async (jobId, amount, description, scheduledDate, scheduledTime) => {
+    // Safety gate: check plumber status before quoting
     const job = get().jobs.find((j) => j.id === jobId);
+    if (job) {
+      const { data: details } = await supabase
+        .from('plumber_details')
+        .select('status')
+        .eq('user_id', job.plumber_id)
+        .single();
+      if (details?.status === 'frozen' || details?.status === 'suspended') {
+        throw new Error('Your account is restricted. Please contact support.');
+      }
+    }
     const resolvedDate = scheduledDate
       ?? job?.enquiry?.preferred_date
       ?? new Date().toISOString().split('T')[0];
@@ -293,3 +321,7 @@ export const useJobStore = create<JobState>((set, get) => ({
     };
   },
 }));
+
+export function canReceivePayout(details: PlumberDetails): boolean {
+  return details.payouts_enabled && details.status === 'active';
+}

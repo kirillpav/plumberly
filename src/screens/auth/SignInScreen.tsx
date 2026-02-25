@@ -11,9 +11,9 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { validateField } from '@/utils/validation';
-import type { AuthStackParamList, OnboardingStackParamList } from '@/types/navigation';
+import type { AuthStackParamList } from '@/types/navigation';
 
-type Nav = NativeStackNavigationProp<AuthStackParamList & OnboardingStackParamList>;
+type Nav = NativeStackNavigationProp<AuthStackParamList>;
 
 export function SignInScreen() {
   const nav = useNavigation<Nav>();
@@ -21,7 +21,6 @@ export function SignInScreen() {
   const params = route.params as { role?: string } | undefined;
   const selectedRole = params?.role;
   const signIn = useAuthStore((s) => s.signIn);
-  const completeOnboarding = useAuthStore((s) => s.completeOnboarding);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -39,7 +38,6 @@ export function SignInScreen() {
     setLoading(true);
     try {
       await signIn(email.trim(), password);
-      await completeOnboarding();
     } catch (err: any) {
       Alert.alert('Sign In Failed', err.message);
     } finally {

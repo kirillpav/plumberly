@@ -61,7 +61,17 @@ create table public.plumber_details (
   bio text,
   verified boolean default false,
   rating numeric(3,2) default 0,
-  jobs_completed integer default 0
+  jobs_completed integer default 0,
+  business_name text not null default '',
+  services_type text check (services_type in ('gas', 'no_gas')) default 'no_gas',
+  gas_safe_number text,
+  gas_safe_verified boolean default false,
+  consent_to_checks boolean default false,
+  right_to_work text,
+  status text check (status in ('provisional', 'active', 'frozen', 'suspended')) default 'provisional',
+  provisional_jobs_remaining integer default 5,
+  payouts_enabled boolean default false,
+  frozen_reason text
 );
 
 alter table public.plumber_details enable row level security;
@@ -175,14 +185,21 @@ begin
 
   -- If plumber, also create plumber_details
   if coalesce(new.raw_user_meta_data->>'role', 'customer') = 'plumber' then
-    insert into public.plumber_details (user_id, regions, hourly_rate)
+    insert into public.plumber_details (user_id, regions, hourly_rate, business_name, services_type, gas_safe_number, consent_to_checks, right_to_work)
     values (
       new.id,
-      coalesce(
-        array(select jsonb_array_elements_text(new.raw_user_meta_data->'regions')),
-        '{}'
-      ),
-      coalesce((new.raw_user_meta_data->>'hourly_rate')::numeric, 0)
+      case
+        when new.raw_user_meta_data->'regions' is not null
+             and jsonb_typeof(new.raw_user_meta_data->'regions') = 'array'
+        then array(select jsonb_array_elements_text(new.raw_user_meta_data->'regions'))
+        else '{}'::text[]
+      end,
+      coalesce((new.raw_user_meta_data->>'hourly_rate')::numeric, 0),
+      coalesce(new.raw_user_meta_data->>'business_name', ''),
+      coalesce(new.raw_user_meta_data->>'services_type', 'no_gas'),
+      new.raw_user_meta_data->>'gas_safe_number',
+      coalesce((new.raw_user_meta_data->>'consent_to_checks')::boolean, false),
+      new.raw_user_meta_data->>'right_to_work'
     );
   end if;
 
@@ -283,7 +300,12 @@ returns trigger as $$
 begin
   if new.status = 'completed' and old.status != 'completed' then
     update public.plumber_details
-    set jobs_completed = jobs_completed + 1
+    set jobs_completed = jobs_completed + 1,
+        provisional_jobs_remaining = greatest(provisional_jobs_remaining - 1, 0),
+        status = case
+          when status = 'provisional' and greatest(provisional_jobs_remaining - 1, 0) = 0 then 'active'
+          else status
+        end
     where user_id = new.plumber_id;
   end if;
   return new;
@@ -306,3 +328,29 @@ create policy "Anyone can view enquiry images" on storage.objects
 
 create policy "Authenticated users can upload enquiry images" on storage.objects
   for insert with check (bucket_id = 'enquiry-images' and auth.role() = 'authenticated');
+
+-- =========================================================
+-- FREEZE PLUMBER RPC (admin use)
+-- =========================================================
+create or replace function public.freeze_plumber(p_user_id uuid, p_reason text default null)
+returns void as $$
+begin
+  -- Only allow service_role (admin) to freeze plumbers
+  if current_setting('request.jwt.claim.role', true) != 'service_role' then
+    raise exception 'Unauthorized: only admins can freeze plumber accounts';
+  end if;
+
+  update public.plumber_details
+  set status = 'frozen',
+      frozen_reason = p_reason
+  where user_id = p_user_id;
+end;
+$$ language plpgsql security definer;
+
+-- =========================================================
+-- MIGRATION: Existing data
+-- Set verified plumbers to status = 'active', provisional_jobs_remaining = 0
+-- =========================================================
+-- UPDATE public.plumber_details
+-- SET status = 'active', provisional_jobs_remaining = 0
+-- WHERE verified = true;
