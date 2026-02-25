@@ -6,13 +6,14 @@ import { AuthNavigator } from './AuthNavigator';
 import { OnboardingNavigator } from './OnboardingNavigator';
 import { CustomerTabNavigator } from './CustomerTabNavigator';
 import { PlumberTabNavigator } from './PlumberTabNavigator';
+import { AwaitingApprovalScreen } from '@/screens/plumber/AwaitingApprovalScreen';
 import type { RootStackParamList } from '@/types/navigation';
 import { Colors } from '@/constants/colors';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export function RootNavigator() {
-  const { session, profile, isLoading, onboardingComplete } = useAuthStore();
+  const { session, profile, plumberDetails, isLoading, onboardingComplete } = useAuthStore();
 
   if (isLoading) {
     return (
@@ -35,6 +36,8 @@ export function RootNavigator() {
         <Stack.Screen name="Onboarding" component={OnboardingNavigator} />
       ) : !session ? (
         <Stack.Screen name="Auth" component={AuthNavigator} />
+      ) : profile?.role === 'plumber' && !plumberDetails?.verified ? (
+        <Stack.Screen name="Plumber" component={AwaitingApprovalScreen} />
       ) : profile?.role === 'plumber' ? (
         <Stack.Screen name="Plumber" component={PlumberTabNavigator} />
       ) : (
