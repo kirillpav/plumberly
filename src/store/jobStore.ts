@@ -12,6 +12,8 @@ interface JobState {
   acceptQuote: (jobId: string) => Promise<void>;
   confirmJobDone: (jobId: string, role: 'customer' | 'plumber') => Promise<void>;
   updateJobStatus: (jobId: string, status: JobStatus) => Promise<void>;
+  getJobPin: (jobId: string) => Promise<string | null>;
+  verifyJobPin: (jobId: string, pin: string) => Promise<boolean>;
   getByStatus: (status: JobStatus) => Job[];
   subscribeToChanges: (plumberId?: string) => () => void;
 }
@@ -192,7 +194,31 @@ export const useJobStore = create<JobState>((set, get) => ({
     await get().fetchJobs();
   },
 
+  getJobPin: async (jobId) => {
+    const { data, error } = await supabase.rpc('get_job_pin', { p_job_id: jobId });
+    if (error) throw error;
+    return data as string | null;
+  },
+
+  verifyJobPin: async (jobId, pin) => {
+    const { data, error } = await supabase.rpc('verify_job_pin', { p_job_id: jobId, p_pin: pin });
+    if (error) throw error;
+    if (data) {
+      await get().fetchJobs();
+    }
+    return data as boolean;
+  },
+
   confirmJobDone: async (jobId, role) => {
+    const { data: pinCheck } = await supabase
+      .from('jobs')
+      .select('pin_verified')
+      .eq('id', jobId)
+      .single();
+    if (!pinCheck?.pin_verified) {
+      throw new Error('The arrival PIN must be verified before confirming job completion.');
+    }
+
     const confirmField = role === 'customer' ? 'customer_confirmed' : 'plumber_confirmed';
     const otherField = role === 'customer' ? 'plumber_confirmed' : 'customer_confirmed';
 

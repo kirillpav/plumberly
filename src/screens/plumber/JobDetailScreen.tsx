@@ -16,6 +16,7 @@ import { InputField } from "@/components/shared/InputField";
 import { PrimaryButton } from "@/components/shared/PrimaryButton";
 import { ChatBubble } from "@/components/ChatBubble";
 import { CompletionIndicator } from "@/components/CompletionIndicator";
+import { PinDisplay } from "@/components/PinDisplay";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { useJobStore } from "@/store/jobStore";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
@@ -698,17 +699,32 @@ export function JobDetailScreen() {
         {/* Completion confirmation */}
         {showCompletionSection && (
           <View style={styles.completionSection}>
+            {job.status === "in_progress" && (
+              <PinDisplay jobId={job.id} pinVerified={job.pin_verified} />
+            )}
             <CompletionIndicator
               customerConfirmed={job.customer_confirmed}
               plumberConfirmed={job.plumber_confirmed}
               viewerRole="plumber"
             />
-            {job.status === "in_progress" && !job.plumber_confirmed && (
+            {job.status === "in_progress" && !job.plumber_confirmed && job.pin_verified && (
               <PrimaryButton
                 title="Confirm Job Done"
                 onPress={handleConfirmDone}
                 loading={actionLoading}
               />
+            )}
+            {job.status === "in_progress" && !job.pin_verified && (
+              <View style={styles.waitingBanner}>
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={18}
+                  color={Colors.primary}
+                />
+                <Text style={styles.waitingText}>
+                  Share the PIN with the customer to unlock job completion
+                </Text>
+              </View>
             )}
             {job.status === "in_progress" &&
               job.plumber_confirmed &&

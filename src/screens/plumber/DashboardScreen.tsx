@@ -12,10 +12,13 @@ import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
 import { SegmentedControl } from '@/components/shared/SegmentedControl';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { useJobStore } from '@/store/jobStore';
+import { useReviewStore } from '@/store/reviewStore';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
+import { StarRating } from '@/components/StarRating';
+import { ReviewCard } from '@/components/ReviewCard';
 import { formatCurrencyWhole } from '@/utils/formatCurrency';
 import type { PlumberStackParamList } from '@/types/navigation';
 import type { Job } from '@/types/index';
@@ -48,6 +51,7 @@ export function DashboardScreen() {
   const navigation = useNavigation<Nav>();
   const profile = useAuthStore((s) => s.profile);
   const { jobs, isLoading, fetchJobs, subscribeToChanges } = useJobStore();
+  const { reviews, fetchReviews } = useReviewStore();
   const [periodIndex, setPeriodIndex] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const { width: screenWidth } = useWindowDimensions();
@@ -57,6 +61,7 @@ export function DashboardScreen() {
   useEffect(() => {
     if (profile?.id) {
       fetchJobs(profile.id);
+      fetchReviews(profile.id);
       const unsub = subscribeToChanges(profile.id);
       return unsub;
     }
@@ -64,15 +69,22 @@ export function DashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (profile?.id) fetchJobs(profile.id);
+      if (profile?.id) {
+        fetchJobs(profile.id);
+        fetchReviews(profile.id);
+      }
     }, [profile?.id])
   );
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchJobs(profile?.id);
+    await Promise.all([fetchJobs(profile?.id), profile?.id ? fetchReviews(profile.id) : Promise.resolve()]);
     setRefreshing(false);
   };
+
+  const averageRating = reviews.length > 0
+    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+    : 0;
 
   // Revenue calculations
   const { currentRevenue, previousRevenue, chartData, maxValue } = useMemo(() => {
@@ -299,10 +311,28 @@ export function DashboardScreen() {
           )}
         </View>
 
-        {/* All Jobs Summary — stub */}
+        {/* Recent Reviews */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>All Jobs Summary</Text>
-          <Text style={styles.comingSoon}>Coming soon</Text>
+          <Text style={styles.cardTitle}>Recent Reviews</Text>
+          {reviews.length === 0 ? (
+            <View style={styles.emptySchedule}>
+              <Ionicons name="star-outline" size={32} color={Colors.grey300} />
+              <Text style={styles.emptyText}>No reviews yet</Text>
+            </View>
+          ) : (
+            <>
+              <View style={styles.ratingOverview}>
+                <Text style={styles.ratingNumber}>{averageRating.toFixed(1)}</Text>
+                <View style={styles.ratingMeta}>
+                  <StarRating rating={Math.round(averageRating)} size={18} />
+                  <Text style={styles.reviewCount}>{reviews.length} review{reviews.length !== 1 ? 's' : ''}</Text>
+                </View>
+              </View>
+              {reviews.slice(0, 3).map((review) => (
+                <ReviewCard key={review.id} review={review} />
+              ))}
+            </>
+          )}
         </View>
 
         {/* Pricing Estimates — stub */}
@@ -411,6 +441,28 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.sm,
   },
   statusText: { ...Typography.caption, fontWeight: '600' },
+  // Reviews
+  ratingOverview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    marginBottom: Spacing.md,
+    paddingBottom: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.grey100,
+  },
+  ratingNumber: {
+    ...Typography.h1,
+    fontSize: 36,
+    color: Colors.black,
+  },
+  ratingMeta: {
+    gap: Spacing.xs,
+  },
+  reviewCount: {
+    ...Typography.bodySmall,
+    color: Colors.grey500,
+  },
   // Stubs
   comingSoon: { ...Typography.bodySmall, color: Colors.grey500, paddingVertical: Spacing.md },
   spacer: { height: Spacing.xxl },

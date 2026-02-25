@@ -61,6 +61,7 @@ export interface Job {
   quote_description: string | null;
   customer_confirmed: boolean;
   plumber_confirmed: boolean;
+  pin_verified: boolean;
   created_at: string;
   updated_at: string;
   enquiry?: Enquiry;
@@ -116,6 +117,18 @@ export interface JobMessage {
   content: string;
   read_at: string | null;
   created_at: string;
+}
+
+export interface Review {
+  id: string;
+  job_id: string;
+  customer_id: string;
+  plumber_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  customer?: { full_name: string; avatar_url: string | null };
+  job?: { enquiry_id: string; enquiry?: { title: string } };
 }
 
 export interface Region {

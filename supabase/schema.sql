@@ -125,6 +125,8 @@ create table public.jobs (
   quote_description text,
   customer_confirmed boolean default false not null,
   plumber_confirmed boolean default false not null,
+  verification_pin text,
+  pin_verified boolean default false not null,
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null
 );
@@ -220,6 +222,77 @@ create trigger jobs_updated_at
 -- =========================================================
 alter publication supabase_realtime add table public.enquiries;
 alter publication supabase_realtime add table public.jobs;
+
+-- =========================================================
+-- REVIEWS
+-- =========================================================
+create table public.reviews (
+  id uuid default uuid_generate_v4() primary key,
+  job_id uuid references public.jobs(id) on delete cascade not null unique,
+  customer_id uuid references public.profiles(id) on delete cascade not null,
+  plumber_id uuid references public.profiles(id) on delete cascade not null,
+  rating integer not null check (rating >= 1 and rating <= 5),
+  comment text,
+  created_at timestamptz default now() not null
+);
+
+alter table public.reviews enable row level security;
+
+create policy "Customers can insert reviews for own completed jobs" on public.reviews
+  for insert with check (
+    auth.uid() = customer_id
+    and exists (
+      select 1 from public.jobs
+      where jobs.id = job_id
+        and jobs.customer_id = auth.uid()
+        and jobs.status = 'completed'
+    )
+  );
+
+create policy "Plumbers can view own reviews" on public.reviews
+  for select using (auth.uid() = plumber_id);
+
+-- RPC: check if review exists (security definer, bypasses RLS for customers)
+create or replace function public.review_exists_for_job(p_job_id uuid)
+returns boolean as $$
+  select exists (
+    select 1 from public.reviews where job_id = p_job_id
+  );
+$$ language sql security definer stable;
+
+-- Trigger: recalculate plumber rating on review insert
+create or replace function public.update_plumber_rating()
+returns trigger as $$
+begin
+  update public.plumber_details
+  set rating = (
+    select coalesce(avg(rating), 0) from public.reviews where plumber_id = new.plumber_id
+  )
+  where user_id = new.plumber_id;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger update_plumber_rating_trigger
+  after insert on public.reviews
+  for each row execute procedure public.update_plumber_rating();
+
+-- Trigger: increment jobs_completed when job transitions to completed
+create or replace function public.increment_jobs_completed()
+returns trigger as $$
+begin
+  if new.status = 'completed' and old.status != 'completed' then
+    update public.plumber_details
+    set jobs_completed = jobs_completed + 1
+    where user_id = new.plumber_id;
+  end if;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+create trigger increment_jobs_completed_trigger
+  after update on public.jobs
+  for each row execute procedure public.increment_jobs_completed();
 
 -- =========================================================
 -- STORAGE BUCKET FOR ENQUIRY IMAGES (safer re-run)

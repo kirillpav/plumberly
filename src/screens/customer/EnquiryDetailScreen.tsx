@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { ScreenWrapper } from "@/components/shared/ScreenWrapper";
@@ -17,7 +18,10 @@ import { SecondaryButton } from "@/components/shared/SecondaryButton";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { ChatBubble } from "@/components/ChatBubble";
 import { CompletionIndicator } from "@/components/CompletionIndicator";
+import { PinEntry } from "@/components/PinEntry";
+import { ReviewPrompt } from "@/components/ReviewPrompt";
 import { useJobStore } from "@/store/jobStore";
+import { useReviewStore } from "@/store/reviewStore";
 import { useEnquiryStore } from "@/store/enquiryStore";
 import { useAuthStore } from "@/store/authStore";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
@@ -55,6 +59,9 @@ export function EnquiryDetailScreen() {
   const [allJobs, setAllJobs] = useState<JobWithPlumber[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [reviewExists, setReviewExists] = useState<boolean | null>(null);
+  const [reviewSkipped, setReviewSkipped] = useState(false);
+  const { checkReviewExists } = useReviewStore();
 
   const loadData = async () => {
     const { data: enq } = await supabase
@@ -66,11 +73,24 @@ export function EnquiryDetailScreen() {
 
     const { data: jobsData } = await supabase
       .from("jobs")
-      .select("*, plumber:profiles!plumber_id(full_name, avatar_url)")
+      .select("id, enquiry_id, customer_id, plumber_id, status, quote_amount, scheduled_date, scheduled_time, notes, quote_description, customer_confirmed, plumber_confirmed, pin_verified, created_at, updated_at, plumber:profiles!plumber_id(full_name, avatar_url)")
       .eq("enquiry_id", enquiryId)
       .order("created_at", { ascending: false });
 
-    setAllJobs((jobsData ?? []) as unknown as JobWithPlumber[]);
+    const jobs = (jobsData ?? []) as unknown as JobWithPlumber[];
+    setAllJobs(jobs);
+
+    // Check review status for completed jobs
+    const completedJob = jobs.find((j) => j.status === "completed");
+    if (completedJob) {
+      const [exists, skippedFlag] = await Promise.all([
+        checkReviewExists(completedJob.id).catch(() => false),
+        AsyncStorage.getItem(`review_skipped_${completedJob.id}`),
+      ]);
+      setReviewExists(exists);
+      setReviewSkipped(skippedFlag === "true");
+    }
+
     setLoading(false);
   };
 
@@ -371,19 +391,34 @@ export function EnquiryDetailScreen() {
 
             {(activeJob.status === "in_progress" || activeJob.status === "completed") && (
               <View style={styles.completionSection}>
+                {activeJob.status === "in_progress" && (
+                  <PinEntry jobId={activeJob.id} pinVerified={activeJob.pin_verified} />
+                )}
                 <CompletionIndicator
                   customerConfirmed={activeJob.customer_confirmed}
                   plumberConfirmed={activeJob.plumber_confirmed}
                   viewerRole="customer"
                 />
                 {activeJob.status === "in_progress" &&
-                  !activeJob.customer_confirmed && (
+                  !activeJob.customer_confirmed && activeJob.pin_verified && (
                     <PrimaryButton
                       title="Confirm Job Done"
                       onPress={handleConfirmDone}
                       loading={actionLoading === activeJob.id}
                     />
                   )}
+                {activeJob.status === "in_progress" && !activeJob.pin_verified && (
+                  <View style={styles.waitingBanner}>
+                    <Ionicons
+                      name="lock-closed-outline"
+                      size={18}
+                      color={Colors.primary}
+                    />
+                    <Text style={styles.waitingText}>
+                      Verify the plumber's PIN to unlock job completion
+                    </Text>
+                  </View>
+                )}
                 {activeJob.status === "in_progress" &&
                   activeJob.customer_confirmed &&
                   !activeJob.plumber_confirmed && (
@@ -398,6 +433,27 @@ export function EnquiryDetailScreen() {
                       </Text>
                     </View>
                   )}
+              </View>
+            )}
+
+            {activeJob.status === "completed" && reviewExists === false && !reviewSkipped && (
+              <ReviewPrompt
+                jobId={activeJob.id}
+                customerId={activeJob.customer_id}
+                plumberId={activeJob.plumber_id}
+                plumberName={activeJob.plumber?.full_name || "the plumber"}
+                onReviewSubmitted={() => setReviewExists(true)}
+                onSkip={async () => {
+                  await AsyncStorage.setItem(`review_skipped_${activeJob.id}`, "true");
+                  setReviewSkipped(true);
+                }}
+              />
+            )}
+
+            {activeJob.status === "completed" && reviewExists === true && (
+              <View style={styles.thankYouBanner}>
+                <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
+                <Text style={styles.thankYouText}>Thank you for your review!</Text>
               </View>
             )}
           </View>
@@ -802,5 +858,15 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontWeight: "700",
   },
+  thankYouBanner: {
+    backgroundColor: '#E8F5E9',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.card,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    marginTop: Spacing.md,
+  },
+  thankYouText: { ...Typography.bodySmall, color: Colors.success, fontWeight: "600", flex: 1 },
   spacer: { height: Spacing.xxl },
 });
