@@ -121,7 +121,13 @@ export function EnquiriesScreen() {
         // Show 'new' enquiries only if no plumber has started working on them yet
         return e.status === "new" && !hasActiveJob;
       }
+      const allJobsDone =
+        hasActiveJob &&
+        activeJobs.every((j) => j.status === "completed");
+
       if (activeIndex === 1) {
+        // Exclude enquiries whose jobs are all completed
+        if (allJobsDone) return false;
         return (
           ACTIVE_STATUSES.includes(e.status) ||
           (hasActiveJob &&
@@ -131,8 +137,7 @@ export function EnquiriesScreen() {
         );
       }
       return (
-        e.status === "completed" ||
-        (hasActiveJob && activeJobs.some((j) => j.status === "completed"))
+        e.status === "completed" || allJobsDone
       );
     });
 

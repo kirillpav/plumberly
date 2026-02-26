@@ -62,6 +62,12 @@ export function EnquiryCard({
     !hasMultipleQuotes && !hasPendingOnly && jobStatus === "pending";
   const showHighlight = hasMultipleQuotes || hasSingleQuote;
 
+  // Use jobStatus when available since it's more up-to-date than enquiry.status
+  const displayStatus =
+    jobStatus && ["in_progress", "completed"].includes(jobStatus)
+      ? jobStatus
+      : enquiry.status;
+
   return (
     <TouchableOpacity
       style={[styles.card, showHighlight && styles.cardHighlight]}
@@ -124,11 +130,11 @@ export function EnquiryCard({
         <View
           style={[
             styles.badge,
-            { backgroundColor: statusColors[enquiry.status] ?? Colors.grey500 },
+            { backgroundColor: statusColors[displayStatus] ?? Colors.grey500 },
           ]}
         >
           <Text style={styles.badgeText}>
-            {enquiry.status.replace("_", " ")}
+            {displayStatus.replace("_", " ")}
           </Text>
         </View>
       </View>
