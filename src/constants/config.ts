@@ -25,6 +25,7 @@ export const Config = {
   chatbot: {
     minExchangesForCTA: 2,
     maxConversationHistory: 2,
+    persistenceTTLMs: 6 * 60 * 60 * 1000,
     intakeFields: {
       leak: [
         { key: 'location', label: 'Where is the leak?', type: 'select', options: ['Kitchen', 'Bathroom', 'Basement', 'Ceiling', 'Outside', 'Other'], required: true },
