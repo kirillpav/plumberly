@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { Calendar } from "react-native-calendars";
 import { ScreenWrapper } from "@/components/shared/ScreenWrapper";
 import { Avatar } from "@/components/shared/Avatar";
 import { InputField } from "@/components/shared/InputField";
@@ -47,6 +48,7 @@ export function JobDetailScreen() {
   const [customTime, setCustomTime] = useState("");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   // Available dates from enquiry's preferred_time (repurposed to store date strings)
   const availableDates = (enquiry?.preferred_time ?? []).filter((d) =>
@@ -118,7 +120,7 @@ export function JobDetailScreen() {
       Alert.alert("Description Required", "Please describe what's included in your quote.");
       return;
     }
-    if (availableDates.length > 0 && !selectedDate) {
+    if (!selectedDate) {
       Alert.alert("Date Required", "Please select a day for the job.");
       return;
     }
@@ -197,6 +199,148 @@ export function JobDetailScreen() {
       ],
     );
   };
+
+  const isOtherDate = selectedDate !== "" && !availableDates.includes(selectedDate);
+
+  const renderDatePicker = () => (
+    <View style={styles.timePickerSection}>
+      <Text style={styles.timePickerLabel}>Select a day for the job</Text>
+      <View style={styles.chipRow}>
+        {availableDates.map((d) => {
+          const isSelected = selectedDate === d;
+          return (
+            <TouchableOpacity
+              key={d}
+              style={[
+                styles.selectableChip,
+                isSelected && styles.selectableChipActive,
+              ]}
+              onPress={() => { setSelectedDate(isSelected ? "" : d); setShowCalendar(false); }}
+            >
+              <Ionicons
+                name="calendar-outline"
+                size={14}
+                color={isSelected ? Colors.white : Colors.primary}
+              />
+              <Text
+                style={[
+                  styles.selectableChipText,
+                  isSelected && styles.selectableChipTextActive,
+                ]}
+              >
+                {formatDate(d)}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+        <TouchableOpacity
+          style={[
+            styles.selectableChip,
+            isOtherDate && styles.selectableChipActive,
+          ]}
+          onPress={() => {
+            if (isOtherDate) {
+              setSelectedDate("");
+              setShowCalendar(false);
+            } else {
+              setShowCalendar((v) => !v);
+            }
+          }}
+        >
+          <Ionicons
+            name="calendar"
+            size={14}
+            color={isOtherDate ? Colors.white : Colors.primary}
+          />
+          <Text
+            style={[
+              styles.selectableChipText,
+              isOtherDate && styles.selectableChipTextActive,
+            ]}
+          >
+            {isOtherDate ? formatDate(selectedDate) : "Other date"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+      {showCalendar && (
+        <Calendar
+          onDayPress={(day: { dateString: string }) => {
+            setSelectedDate(day.dateString);
+            setShowCalendar(false);
+          }}
+          markedDates={
+            isOtherDate
+              ? { [selectedDate]: { selected: true, selectedColor: Colors.primary } }
+              : {}
+          }
+          minDate={new Date().toISOString().split("T")[0]}
+          theme={{
+            todayTextColor: Colors.primary,
+            arrowColor: Colors.primary,
+            textDayFontFamily: "Inter-Regular",
+            textMonthFontFamily: "Inter-SemiBold",
+            textDayHeaderFontFamily: "Inter-Medium",
+          }}
+          style={styles.calendar}
+        />
+      )}
+    </View>
+  );
+
+  const renderTimePicker = () => (
+    <View style={styles.timePickerSection}>
+      <Text style={styles.timePickerLabel}>Proposed time</Text>
+      <View style={styles.chipRow}>
+        {(["morning", "afternoon", "evening"] as const).map((opt) => {
+          const labels = { morning: "Morning", afternoon: "Afternoon", evening: "Evening" };
+          const isSelected = timeOption === opt;
+          return (
+            <TouchableOpacity
+              key={opt}
+              style={[styles.selectableChip, isSelected && styles.selectableChipActive]}
+              onPress={() => { setTimeOption(isSelected ? "" : opt); setCustomTime(""); }}
+            >
+              <Ionicons name="time-outline" size={14} color={isSelected ? Colors.white : Colors.primary} />
+              <Text style={[styles.selectableChipText, isSelected && styles.selectableChipTextActive]}>
+                {labels[opt]}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+        <TouchableOpacity
+          style={[styles.selectableChip, timeOption === "custom" && styles.selectableChipActive]}
+          onPress={() => { setTimeOption(timeOption === "custom" ? "" : "custom"); }}
+        >
+          <Ionicons name="create-outline" size={14} color={timeOption === "custom" ? Colors.white : Colors.primary} />
+          <Text style={[styles.selectableChipText, timeOption === "custom" && styles.selectableChipTextActive]}>
+            Custom
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.selectableChip, timeOption === "flexible" && styles.selectableChipActive]}
+          onPress={() => { setTimeOption(timeOption === "flexible" ? "" : "flexible"); setCustomTime(""); }}
+        >
+          <Ionicons name="chatbubbles-outline" size={14} color={timeOption === "flexible" ? Colors.white : Colors.primary} />
+          <Text style={[styles.selectableChipText, timeOption === "flexible" && styles.selectableChipTextActive]}>
+            Flexible
+          </Text>
+        </TouchableOpacity>
+      </View>
+      {timeOption === "custom" && (
+        <InputField
+          label=""
+          value={customTime}
+          onChangeText={setCustomTime}
+          placeholder="e.g. 10:00 AM, or 2–4pm"
+        />
+      )}
+      {timeOption === "flexible" && (
+        <Text style={styles.flexibleHint}>
+          You can agree on a specific time with the customer in chat after the quote is accepted.
+        </Text>
+      )}
+    </View>
+  );
 
   if (loading) return <LoadingSpinner />;
   if (!job) return null;
@@ -399,95 +543,9 @@ export function JobDetailScreen() {
               style={{ height: 80, textAlignVertical: "top" }}
             />
 
-            {availableDates.length > 0 && (
-              <View style={styles.timePickerSection}>
-                <Text style={styles.timePickerLabel}>
-                  Select a day for the job
-                </Text>
-                <View style={styles.chipRow}>
-                  {availableDates.map((d) => {
-                    const isSelected = selectedDate === d;
-                    return (
-                      <TouchableOpacity
-                        key={d}
-                        style={[
-                          styles.selectableChip,
-                          isSelected && styles.selectableChipActive,
-                        ]}
-                        onPress={() => setSelectedDate(isSelected ? "" : d)}
-                      >
-                        <Ionicons
-                          name="calendar-outline"
-                          size={14}
-                          color={isSelected ? Colors.white : Colors.primary}
-                        />
-                        <Text
-                          style={[
-                            styles.selectableChipText,
-                            isSelected && styles.selectableChipTextActive,
-                          ]}
-                        >
-                          {formatDate(d)}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            )}
+            {renderDatePicker()}
 
-            <View style={styles.timePickerSection}>
-              <Text style={styles.timePickerLabel}>Proposed time</Text>
-              <View style={styles.chipRow}>
-                {(["morning", "afternoon", "evening"] as const).map((opt) => {
-                  const labels = { morning: "Morning", afternoon: "Afternoon", evening: "Evening" };
-                  const isSelected = timeOption === opt;
-                  return (
-                    <TouchableOpacity
-                      key={opt}
-                      style={[styles.selectableChip, isSelected && styles.selectableChipActive]}
-                      onPress={() => { setTimeOption(isSelected ? "" : opt); setCustomTime(""); }}
-                    >
-                      <Ionicons name="time-outline" size={14} color={isSelected ? Colors.white : Colors.primary} />
-                      <Text style={[styles.selectableChipText, isSelected && styles.selectableChipTextActive]}>
-                        {labels[opt]}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-                <TouchableOpacity
-                  style={[styles.selectableChip, timeOption === "custom" && styles.selectableChipActive]}
-                  onPress={() => { setTimeOption(timeOption === "custom" ? "" : "custom"); }}
-                >
-                  <Ionicons name="create-outline" size={14} color={timeOption === "custom" ? Colors.white : Colors.primary} />
-                  <Text style={[styles.selectableChipText, timeOption === "custom" && styles.selectableChipTextActive]}>
-                    Custom
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.selectableChip, timeOption === "flexible" && styles.selectableChipActive]}
-                  onPress={() => { setTimeOption(timeOption === "flexible" ? "" : "flexible"); setCustomTime(""); }}
-                >
-                  <Ionicons name="chatbubbles-outline" size={14} color={timeOption === "flexible" ? Colors.white : Colors.primary} />
-                  <Text style={[styles.selectableChipText, timeOption === "flexible" && styles.selectableChipTextActive]}>
-                    Flexible
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              {timeOption === "custom" && (
-                <InputField
-                  label=""
-                  value={customTime}
-                  onChangeText={setCustomTime}
-                  placeholder="e.g. 10:00 AM, or 2–4pm"
-                />
-              )}
-              {timeOption === "flexible" && (
-                <Text style={styles.flexibleHint}>
-                  You can agree on a specific time with the customer in chat after the quote is accepted.
-                </Text>
-              )}
-            </View>
+            {renderTimePicker()}
 
             <PrimaryButton
               title="Submit Quote"
@@ -583,95 +641,9 @@ export function JobDetailScreen() {
               style={{ height: 80, textAlignVertical: "top" }}
             />
 
-            {availableDates.length > 0 && (
-              <View style={styles.timePickerSection}>
-                <Text style={styles.timePickerLabel}>
-                  Select a day for the job
-                </Text>
-                <View style={styles.chipRow}>
-                  {availableDates.map((d) => {
-                    const isSelected = selectedDate === d;
-                    return (
-                      <TouchableOpacity
-                        key={d}
-                        style={[
-                          styles.selectableChip,
-                          isSelected && styles.selectableChipActive,
-                        ]}
-                        onPress={() => setSelectedDate(isSelected ? "" : d)}
-                      >
-                        <Ionicons
-                          name="calendar-outline"
-                          size={14}
-                          color={isSelected ? Colors.white : Colors.primary}
-                        />
-                        <Text
-                          style={[
-                            styles.selectableChipText,
-                            isSelected && styles.selectableChipTextActive,
-                          ]}
-                        >
-                          {formatDate(d)}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-            )}
+            {renderDatePicker()}
 
-            <View style={styles.timePickerSection}>
-              <Text style={styles.timePickerLabel}>Proposed time</Text>
-              <View style={styles.chipRow}>
-                {(["morning", "afternoon", "evening"] as const).map((opt) => {
-                  const labels = { morning: "Morning", afternoon: "Afternoon", evening: "Evening" };
-                  const isSelected = timeOption === opt;
-                  return (
-                    <TouchableOpacity
-                      key={opt}
-                      style={[styles.selectableChip, isSelected && styles.selectableChipActive]}
-                      onPress={() => { setTimeOption(isSelected ? "" : opt); setCustomTime(""); }}
-                    >
-                      <Ionicons name="time-outline" size={14} color={isSelected ? Colors.white : Colors.primary} />
-                      <Text style={[styles.selectableChipText, isSelected && styles.selectableChipTextActive]}>
-                        {labels[opt]}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-                <TouchableOpacity
-                  style={[styles.selectableChip, timeOption === "custom" && styles.selectableChipActive]}
-                  onPress={() => { setTimeOption(timeOption === "custom" ? "" : "custom"); }}
-                >
-                  <Ionicons name="create-outline" size={14} color={timeOption === "custom" ? Colors.white : Colors.primary} />
-                  <Text style={[styles.selectableChipText, timeOption === "custom" && styles.selectableChipTextActive]}>
-                    Custom
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.selectableChip, timeOption === "flexible" && styles.selectableChipActive]}
-                  onPress={() => { setTimeOption(timeOption === "flexible" ? "" : "flexible"); setCustomTime(""); }}
-                >
-                  <Ionicons name="chatbubbles-outline" size={14} color={timeOption === "flexible" ? Colors.white : Colors.primary} />
-                  <Text style={[styles.selectableChipText, timeOption === "flexible" && styles.selectableChipTextActive]}>
-                    Flexible
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              {timeOption === "custom" && (
-                <InputField
-                  label=""
-                  value={customTime}
-                  onChangeText={setCustomTime}
-                  placeholder="e.g. 10:00 AM, or 2–4pm"
-                />
-              )}
-              {timeOption === "flexible" && (
-                <Text style={styles.flexibleHint}>
-                  You can agree on a specific time with the customer in chat after the quote is accepted.
-                </Text>
-              )}
-            </View>
+            {renderTimePicker()}
 
             <PrimaryButton
               title="Send Revised Quote"
@@ -1014,6 +986,10 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     color: Colors.white,
     fontWeight: "700",
+  },
+  calendar: {
+    borderRadius: BorderRadius.card,
+    marginTop: Spacing.sm,
   },
   spacer: { height: Spacing.xxl },
 });

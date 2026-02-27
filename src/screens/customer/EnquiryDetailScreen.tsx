@@ -320,14 +320,22 @@ export function EnquiryDetailScreen() {
                       {formatCurrency(activeJob.quote_amount)}
                     </Text>
                   )}
-                  {activeJob.scheduled_date && (
-                    <View style={styles.quoteTimeBadgeInline}>
-                      <Ionicons name="calendar-outline" size={12} color={Colors.statusCompleted} />
-                      <Text style={[styles.quoteTimeTextInline, { color: Colors.statusCompleted }]}>
-                        {formatDate(activeJob.scheduled_date)}
-                      </Text>
-                    </View>
-                  )}
+                  {activeJob.scheduled_date && (() => {
+                    const isProposed = !enquiry.preferred_time?.includes(activeJob.scheduled_date);
+                    return (
+                      <View style={styles.quoteTimeBadgeInline}>
+                        <Ionicons name="calendar-outline" size={12} color={Colors.statusCompleted} />
+                        <Text style={[styles.quoteTimeTextInline, { color: Colors.statusCompleted }]}>
+                          {formatDate(activeJob.scheduled_date)}
+                        </Text>
+                        {isProposed && (
+                          <View style={styles.proposedBadge}>
+                            <Text style={styles.proposedBadgeText}>Proposed</Text>
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })()}
                   {activeJob.scheduled_time && (
                     <View style={styles.quoteTimeBadgeInline}>
                       <Ionicons name="time-outline" size={12} color={Colors.statusCompleted} />
@@ -477,18 +485,26 @@ export function EnquiryDetailScreen() {
                     <Text style={styles.plumberName}>
                       {job.plumber?.full_name}
                     </Text>
-                    {job.scheduled_date && (
-                      <View style={styles.quoteTimeBadgeInline}>
-                        <Ionicons
-                          name="calendar-outline"
-                          size={12}
-                          color={Colors.primary}
-                        />
-                        <Text style={styles.quoteTimeTextInline}>
-                          {formatDate(job.scheduled_date)}
-                        </Text>
-                      </View>
-                    )}
+                    {job.scheduled_date && (() => {
+                      const isProposed = !enquiry.preferred_time?.includes(job.scheduled_date);
+                      return (
+                        <View style={styles.quoteTimeBadgeInline}>
+                          <Ionicons
+                            name="calendar-outline"
+                            size={12}
+                            color={isProposed ? Colors.warning : Colors.primary}
+                          />
+                          <Text style={[styles.quoteTimeTextInline, isProposed && { color: Colors.warning }]}>
+                            {formatDate(job.scheduled_date)}
+                          </Text>
+                          {isProposed && (
+                            <View style={styles.proposedBadge}>
+                              <Text style={styles.proposedBadgeText}>Proposed</Text>
+                            </View>
+                          )}
+                        </View>
+                      );
+                    })()}
                     {job.scheduled_time && (
                       <View style={styles.quoteTimeBadgeInline}>
                         <Ionicons
@@ -751,6 +767,19 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   quoteTimeTextInline: { ...Typography.caption, color: Colors.primary },
+  proposedBadge: {
+    backgroundColor: "#FFF8EB",
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: BorderRadius.full,
+    marginLeft: 4,
+  },
+  proposedBadgeText: {
+    ...Typography.caption,
+    color: Colors.warning,
+    fontWeight: "600",
+    fontSize: 10,
+  },
   quoteButtons: { flexDirection: "row", gap: Spacing.md },
   quoteButtonWrap: { flex: 1 },
   pendingBanner: {

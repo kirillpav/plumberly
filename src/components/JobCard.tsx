@@ -20,6 +20,10 @@ interface Props {
 export function JobCard({ job, onPress, actionLabel, onAction, unreadCount }: Props) {
   const isDeclined = job.status === 'declined';
   const isNotSelected = job.status === 'cancelled' && job.notes === 'not_selected';
+  const isPending = job.status === 'pending';
+  const isQuoted = job.status === 'quoted';
+  const isAccepted = job.status === 'accepted';
+  const isInProgress = job.status === 'in_progress';
 
   return (
     <TouchableOpacity
@@ -38,6 +42,34 @@ export function JobCard({ job, onPress, actionLabel, onAction, unreadCount }: Pr
         <View style={styles.declinedBanner}>
           <Ionicons name="close-circle" size={14} color={Colors.error} />
           <Text style={styles.declinedBannerText}>Quote declined by customer</Text>
+        </View>
+      )}
+
+      {isPending && (
+        <View style={styles.pendingBanner}>
+          <Ionicons name="create-outline" size={14} color={Colors.primary} />
+          <Text style={styles.pendingBannerText}>Submit your quote</Text>
+        </View>
+      )}
+
+      {isQuoted && (
+        <View style={styles.quotedBanner}>
+          <Ionicons name="hourglass-outline" size={14} color={Colors.warning} />
+          <Text style={styles.quotedBannerText}>Customer reviewing quote</Text>
+        </View>
+      )}
+
+      {isAccepted && (
+        <View style={styles.acceptedBanner}>
+          <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
+          <Text style={styles.acceptedBannerText}>Quote accepted</Text>
+        </View>
+      )}
+
+      {isInProgress && (
+        <View style={styles.inProgressBanner}>
+          <Ionicons name="construct-outline" size={14} color={Colors.primary} />
+          <Text style={styles.inProgressBannerText}>Job in progress</Text>
         </View>
       )}
 
@@ -144,6 +176,78 @@ const styles = StyleSheet.create({
   declinedBannerText: {
     ...Typography.caption,
     color: Colors.error,
+    fontWeight: '600',
+  },
+  pendingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.lightBlue,
+    marginHorizontal: -Spacing.base,
+    marginTop: -Spacing.base,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.sm,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
+  },
+  pendingBannerText: {
+    ...Typography.caption,
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  quotedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: '#FFF8EB',
+    marginHorizontal: -Spacing.base,
+    marginTop: -Spacing.base,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.sm,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
+  },
+  quotedBannerText: {
+    ...Typography.caption,
+    color: Colors.warning,
+    fontWeight: '600',
+  },
+  acceptedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: '#E8F5E9',
+    marginHorizontal: -Spacing.base,
+    marginTop: -Spacing.base,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.sm,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
+  },
+  acceptedBannerText: {
+    ...Typography.caption,
+    color: Colors.success,
+    fontWeight: '600',
+  },
+  inProgressBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: Colors.lightBlue,
+    marginHorizontal: -Spacing.base,
+    marginTop: -Spacing.base,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.sm,
+    borderTopLeftRadius: BorderRadius.card,
+    borderTopRightRadius: BorderRadius.card,
+  },
+  inProgressBannerText: {
+    ...Typography.caption,
+    color: Colors.primary,
     fontWeight: '600',
   },
   row: {
