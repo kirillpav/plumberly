@@ -6,7 +6,7 @@ import { BarChart } from 'react-native-gifted-charts';
 import { Ionicons } from '@expo/vector-icons';
 import {
   startOfWeek, endOfWeek, startOfMonth, endOfMonth,
-  subWeeks, subMonths, format, isWithinInterval, getDay,
+  subWeeks, subMonths, format, isWithinInterval, getDay, addDays,
 } from 'date-fns';
 import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
 import { SegmentedControl } from '@/components/shared/SegmentedControl';
@@ -89,9 +89,9 @@ export function DashboardScreen() {
   // Revenue calculations
   const { currentRevenue, previousRevenue, chartData, maxValue } = useMemo(() => {
     const now = new Date();
-    // Include jobs that are in_progress or completed with a quote (revenue earned)
+    // Only count revenue from completed jobs
     const revenueJobs = jobs.filter(
-      (j) => (j.status === 'completed' || j.status === 'in_progress') && j.quote_amount != null
+      (j) => j.status === 'completed' && j.quote_amount != null
     );
 
     let data: { value: number; label: string; frontColor: string }[];
@@ -174,8 +174,10 @@ export function DashboardScreen() {
   // Group jobs by their time slot for calendar-style display
   const scheduleGroups = useMemo(() => {
     const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const acceptedStatuses = ['accepted', 'in_progress', 'completed'];
     const todayJobs = jobs
       .filter((j) => {
+        if (!acceptedStatuses.includes(j.status)) return false;
         const jobDate = j.scheduled_date ?? j.enquiry?.preferred_date ?? null;
         return jobDate === todayStr;
       })
@@ -192,6 +194,25 @@ export function DashboardScreen() {
       }
     }
     return groups;
+  }, [jobs]);
+
+  const { tomorrowCount, thisWeekCount } = useMemo(() => {
+    const now = new Date();
+    const tomorrowStr = format(addDays(now, 1), 'yyyy-MM-dd');
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+
+    const acceptedStatuses = ['accepted', 'in_progress', 'completed'];
+    const getJobDate = (j: Job) => j.scheduled_date ?? j.enquiry?.preferred_date ?? null;
+
+    const scheduledJobs = jobs.filter((j) => acceptedStatuses.includes(j.status));
+    const tomorrow = scheduledJobs.filter((j) => getJobDate(j) === tomorrowStr).length;
+    const thisWeek = scheduledJobs.filter((j) => {
+      const d = getJobDate(j);
+      return d != null && isWithinInterval(new Date(d), { start: weekStart, end: weekEnd });
+    }).length;
+
+    return { tomorrowCount: tomorrow, thisWeekCount: thisWeek };
   }, [jobs]);
 
   if (isLoading && jobs.length === 0) {
@@ -309,6 +330,20 @@ export function DashboardScreen() {
               </View>
             ))
           )}
+          <View style={styles.scheduleIndicators}>
+            <View style={styles.indicator}>
+              <Ionicons name="arrow-forward-outline" size={16} color={Colors.grey500} />
+              <Text style={styles.indicatorText}>
+                <Text style={styles.indicatorCount}>{tomorrowCount}</Text> tomorrow
+              </Text>
+            </View>
+            <View style={styles.indicator}>
+              <Ionicons name="calendar-outline" size={16} color={Colors.grey500} />
+              <Text style={styles.indicatorText}>
+                <Text style={styles.indicatorCount}>{thisWeekCount}</Text> this week
+              </Text>
+            </View>
+          </View>
         </View>
 
         {/* Recent Reviews */}
@@ -441,6 +476,21 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.sm,
   },
   statusText: { ...Typography.caption, fontWeight: '600' },
+  scheduleIndicators: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginTop: Spacing.md,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.grey100,
+  },
+  indicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  indicatorCount: { fontWeight: '700', color: Colors.black },
+  indicatorText: { ...Typography.bodySmall, color: Colors.grey500 },
   // Reviews
   ratingOverview: {
     flexDirection: 'row',
