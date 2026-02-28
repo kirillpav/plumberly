@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,32 +35,34 @@ export function AccountScreen() {
 
   return (
     <ScreenWrapper>
-      <View style={styles.profileSection}>
-        <Avatar uri={profile?.avatar_url} name={profile?.full_name} size="lg" />
-        <Text style={styles.name}>{profile?.full_name}</Text>
-        <Text style={styles.email}>{profile?.email}</Text>
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={styles.profileSection}>
+          <Avatar uri={profile?.avatar_url} name={profile?.full_name} size="lg" />
+          <Text style={styles.name}>{profile?.full_name}</Text>
+          <Text style={styles.email}>{profile?.email}</Text>
+        </View>
 
-      <View style={styles.menu}>
-        {MENU_ITEMS.map((item) => (
-          <TouchableOpacity
-            key={item.label}
-            style={styles.menuItem}
-            onPress={() => {
-              if (item.route === 'EditProfile') nav.navigate('EditProfile');
-            }}
-          >
-            <Ionicons name={item.icon} size={22} color={Colors.grey700} />
-            <Text style={styles.menuLabel}>{item.label}</Text>
-            <Ionicons name="chevron-forward" size={18} color={Colors.grey300} />
-          </TouchableOpacity>
-        ))}
-      </View>
+        <View style={styles.menu}>
+          {MENU_ITEMS.map((item) => (
+            <TouchableOpacity
+              key={item.label}
+              style={styles.menuItem}
+              onPress={() => {
+                if (item.route === 'EditProfile') nav.navigate('EditProfile');
+              }}
+            >
+              <Ionicons name={item.icon} size={22} color={Colors.grey700} />
+              <Text style={styles.menuLabel}>{item.label}</Text>
+              <Ionicons name="chevron-forward" size={18} color={Colors.grey300} />
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleSignOut}>
-        <Ionicons name="log-out-outline" size={22} color={Colors.error} />
-        <Text style={styles.logoutText}>Log Out</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleSignOut}>
+          <Ionicons name="log-out-outline" size={22} color={Colors.error} />
+          <Text style={styles.logoutText}>Log Out</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </ScreenWrapper>
   );
 }

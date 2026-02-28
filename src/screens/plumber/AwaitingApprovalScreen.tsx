@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PrimaryButton } from "@/components/shared/PrimaryButton";
@@ -39,6 +39,7 @@ export function AwaitingApprovalScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <View style={styles.content}>
         <View style={[styles.iconWrap, (isFrozen || isSuspended) && styles.iconWrapError]}>
           <Ionicons name={icon} size={48} color={iconColor} />
@@ -58,6 +59,7 @@ export function AwaitingApprovalScreen() {
           style={styles.signOutButton}
         />
       </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
