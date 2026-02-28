@@ -23,6 +23,7 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { issueTypeToProblemType, generateDescription } from '@/utils/intakeHelpers';
+import { isValidPostcode } from '@/utils/validation';
 import type { CustomerStackParamList } from '@/types/navigation';
 
 const PROBLEM_TYPES = [
@@ -56,6 +57,10 @@ export function NewEnquiryScreen() {
   const [region, setRegion] = useState('');
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>(intakeData?.photos ?? []);
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [city, setCity] = useState('London');
+  const [postcode, setPostcode] = useState('');
   const [loading, setLoading] = useState(false);
 
   const toggleDate = (dateString: string) => {
@@ -69,6 +74,22 @@ export function NewEnquiryScreen() {
   const handleSubmit = async () => {
     if (!problemType) {
       Alert.alert('Required', 'Please select a problem type.');
+      return;
+    }
+    if (!addressLine1.trim()) {
+      Alert.alert('Required', 'Please enter your address.');
+      return;
+    }
+    if (!postcode.trim()) {
+      Alert.alert('Required', 'Please enter your postcode.');
+      return;
+    }
+    if (!isValidPostcode(postcode)) {
+      Alert.alert('Invalid Postcode', 'Please enter a valid UK postcode.');
+      return;
+    }
+    if (!city.trim()) {
+      Alert.alert('Required', 'Please enter your city.');
       return;
     }
     if (!profile?.id) {
@@ -95,6 +116,10 @@ export function NewEnquiryScreen() {
         preferredTime: selectedDates.length > 0 ? selectedDates : undefined,
         images: uploadedUrls,
         chatbotTranscript: cleanTranscript,
+        addressLine1: addressLine1.trim(),
+        addressLine2: addressLine2.trim() || undefined,
+        city: city.trim(),
+        postcode: postcode.trim().toUpperCase(),
       });
 
       Alert.alert('Success', 'Your enquiry has been submitted!', [
@@ -156,6 +181,33 @@ export function NewEnquiryScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+          <Text style={styles.label}>Job Address</Text>
+          <InputField
+            label="Address Line 1"
+            value={addressLine1}
+            onChangeText={setAddressLine1}
+            placeholder="e.g. 42 High Street"
+          />
+          <InputField
+            label="Address Line 2 (optional)"
+            value={addressLine2}
+            onChangeText={setAddressLine2}
+            placeholder="e.g. Flat 3"
+          />
+          <InputField
+            label="City"
+            value={city}
+            onChangeText={setCity}
+            placeholder="e.g. London"
+          />
+          <InputField
+            label="Postcode"
+            value={postcode}
+            onChangeText={setPostcode}
+            placeholder="e.g. SW1A 1AA"
+            autoCapitalize="characters"
+          />
 
           <Text style={styles.label}>Available Days (tap to select multiple)</Text>
           <Calendar

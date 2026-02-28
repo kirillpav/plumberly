@@ -296,6 +296,23 @@ export function EnquiryDetailScreen() {
             ))}
         </View>
 
+        {enquiry.address_line_1 ? (
+          <View style={styles.detailsRow}>
+            <View style={styles.detailChip}>
+              <Ionicons
+                name="location-outline"
+                size={14}
+                color={Colors.primary}
+              />
+              <Text style={styles.detailChipText}>
+                {[enquiry.address_line_1, enquiry.address_line_2, enquiry.city, enquiry.postcode]
+                  .filter(Boolean)
+                  .join(', ')}
+              </Text>
+            </View>
+          </View>
+        ) : null}
+
         {/* Active job (in_progress or completed) — single plumber chosen */}
         {activeJob && (
           <View style={styles.section}>

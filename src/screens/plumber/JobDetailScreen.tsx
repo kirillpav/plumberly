@@ -36,7 +36,7 @@ export function JobDetailScreen() {
   const nav = useNavigation<NativeStackNavigationProp<PlumberStackParamList>>();
   const route = useRoute<RouteProp<PlumberStackParamList, "JobDetail">>();
   const { jobId } = route.params;
-  const { submitQuote, confirmJobDone, updateJobStatus } = useJobStore();
+  const { jobs, submitQuote, confirmJobDone, updateJobStatus } = useJobStore();
   const unreadCounts = useUnreadCounts();
 
   const [job, setJob] = useState<Job | null>(null);
@@ -110,6 +110,14 @@ export function JobDetailScreen() {
     };
   }, [jobId]);
 
+  const getConflictingJobs = (date: string) =>
+    jobs.filter(
+      (j) =>
+        j.id !== job?.id &&
+        j.scheduled_date === date &&
+        ["quoted", "accepted", "in_progress"].includes(j.status),
+    );
+
   const handleSubmitQuote = async () => {
     if (!job) return;
     const amount = parseFloat(quoteInput);
@@ -140,25 +148,46 @@ export function JobDetailScreen() {
       : timeOption
         ? timeLabels[timeOption]
         : undefined;
-    setActionLoading(true);
-    try {
-      await submitQuote(job.id, amount, quoteDescription.trim(), selectedDate || undefined, resolvedTime);
-      setJob({
-        ...job,
-        status: "quoted",
-        quote_amount: amount,
-        quote_description: quoteDescription.trim(),
-        scheduled_date: selectedDate || job.scheduled_date,
-        scheduled_time: resolvedTime ?? null,
+
+    const doSubmitQuote = async () => {
+      setActionLoading(true);
+      try {
+        await submitQuote(job.id, amount, quoteDescription.trim(), selectedDate || undefined, resolvedTime);
+        setJob({
+          ...job,
+          status: "quoted",
+          quote_amount: amount,
+          quote_description: quoteDescription.trim(),
+          scheduled_date: selectedDate || job.scheduled_date,
+          scheduled_time: resolvedTime ?? null,
+        });
+        Alert.alert(
+          "Quote Sent",
+          "The customer has been notified. You will be updated when they respond.",
+        );
+      } catch (err: any) {
+        Alert.alert("Error", err.message);
+      } finally {
+        setActionLoading(false);
+      }
+    };
+
+    const conflicts = getConflictingJobs(selectedDate);
+    if (conflicts.length > 0) {
+      const lines = conflicts.map((c) => {
+        const title = c.enquiry?.title || "Untitled job";
+        return c.scheduled_time ? `• ${title} (${c.scheduled_time})` : `• ${title}`;
       });
       Alert.alert(
-        "Quote Sent",
-        "The customer has been notified. You will be updated when they respond.",
+        "Schedule Conflict",
+        `You already have ${conflicts.length === 1 ? "a job" : `${conflicts.length} jobs`} on ${formatDate(selectedDate)}:\n\n${lines.join("\n")}\n\nDo you still want to send this quote?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Send Anyway", onPress: doSubmitQuote },
+        ],
       );
-    } catch (err: any) {
-      Alert.alert("Error", err.message);
-    } finally {
-      setActionLoading(false);
+    } else {
+      await doSubmitQuote();
     }
   };
 
@@ -234,6 +263,8 @@ export function JobDetailScreen() {
             </TouchableOpacity>
           );
         })}
+      </View>
+      <View style={[styles.chipRow, { marginTop: Spacing.sm }]}>
         <TouchableOpacity
           style={[
             styles.selectableChip,
@@ -388,6 +419,23 @@ export function JobDetailScreen() {
           {enquiry?.region && (
             <Text style={styles.meta}>Region: {enquiry.region}</Text>
           )}
+          {['accepted', 'in_progress', 'completed'].includes(job.status) && enquiry?.address_line_1 ? (
+            <View style={styles.addressRow}>
+              <Ionicons name="location-outline" size={16} color={Colors.primary} />
+              <Text style={styles.addressText}>
+                {[enquiry.address_line_1, enquiry.address_line_2, enquiry.city, enquiry.postcode]
+                  .filter(Boolean)
+                  .join(', ')}
+              </Text>
+            </View>
+          ) : !['accepted', 'in_progress', 'completed'].includes(job.status) ? (
+            <View style={styles.addressLockedBanner}>
+              <Ionicons name="lock-closed-outline" size={16} color={Colors.grey500} />
+              <Text style={styles.addressLockedText}>
+                Address available after quote is accepted
+              </Text>
+            </View>
+          ) : null}
           {availableDates.length > 0 ? (
             <View style={styles.chipRow}>
               <Text style={styles.meta}>Customer available days:</Text>
@@ -1022,6 +1070,31 @@ const styles = StyleSheet.create({
   calendar: {
     borderRadius: BorderRadius.card,
     marginTop: Spacing.sm,
+  },
+  addressRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Spacing.xs,
+    marginTop: Spacing.sm,
+  },
+  addressText: {
+    ...Typography.bodySmall,
+    color: Colors.primary,
+    flex: 1,
+  },
+  addressLockedBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.xs,
+    backgroundColor: Colors.grey100,
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    marginTop: Spacing.sm,
+  },
+  addressLockedText: {
+    ...Typography.caption,
+    color: Colors.grey500,
+    flex: 1,
   },
   spacer: { height: Spacing.xxl },
 });

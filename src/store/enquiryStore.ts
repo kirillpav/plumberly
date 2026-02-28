@@ -15,6 +15,10 @@ interface EnquiryState {
     preferredTime?: string[];
     images?: string[];
     chatbotTranscript?: ChatMessage[];
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    postcode: string;
   }) => Promise<void>;
   updateEnquiry: (id: string, updates: Partial<Enquiry>) => Promise<void>;
   deleteEnquiry: (id: string, customerId: string) => Promise<void>;
@@ -49,7 +53,7 @@ export const useEnquiryStore = create<EnquiryState>((set, get) => ({
     }
   },
 
-  createEnquiry: async ({ customerId, title, description, region, preferredDate, preferredTime, images, chatbotTranscript }) => {
+  createEnquiry: async ({ customerId, title, description, region, preferredDate, preferredTime, images, chatbotTranscript, addressLine1, addressLine2, city, postcode }) => {
     const { error } = await supabase.from('enquiries').insert({
       customer_id: customerId,
       title,
@@ -60,6 +64,10 @@ export const useEnquiryStore = create<EnquiryState>((set, get) => ({
       preferred_time: preferredTime ?? [],
       images: images ?? [],
       chatbot_transcript: chatbotTranscript ? JSON.parse(JSON.stringify(chatbotTranscript)) : null,
+      address_line_1: addressLine1,
+      address_line_2: addressLine2 ?? null,
+      city,
+      postcode,
     });
     if (error) throw error;
 

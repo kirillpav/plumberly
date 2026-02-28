@@ -16,6 +16,10 @@ export function isMinLength(value: string, min: number): boolean {
   return value.trim().length >= min;
 }
 
+export function isValidPostcode(value: string): boolean {
+  return /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i.test(value.trim());
+}
+
 export function validateField(
   value: string,
   rules: { required?: boolean; email?: boolean; phone?: boolean; minLength?: number }

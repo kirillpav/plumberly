@@ -100,6 +100,10 @@ create table public.enquiries (
   preferred_time text[] default '{}',
   images text[] default '{}',
   chatbot_transcript jsonb,
+  address_line_1 text not null default '',
+  address_line_2 text,
+  city text not null default 'London',
+  postcode text not null default '',
   created_at timestamptz default now() not null,
   updated_at timestamptz default now() not null
 );

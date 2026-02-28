@@ -54,6 +54,10 @@ export interface Enquiry {
   preferred_time: string[];
   images: string[];
   chatbot_transcript: ChatMessage[] | null;
+  address_line_1: string;
+  address_line_2: string | null;
+  city: string;
+  postcode: string;
   created_at: string;
   updated_at: string;
   customer?: UserProfile;
