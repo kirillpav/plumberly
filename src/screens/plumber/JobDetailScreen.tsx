@@ -27,6 +27,7 @@ import { Typography } from "@/constants/typography";
 import { Spacing, BorderRadius } from "@/constants/spacing";
 import { formatDate } from "@/utils/formatDate";
 import { formatCurrency } from "@/utils/formatCurrency";
+import { addJobToCalendar } from "@/lib/calendarExport";
 import type { PlumberStackParamList } from "@/types/navigation";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { Job, Enquiry, UserProfile, ChatMessage } from "@/types/index";
@@ -499,6 +500,37 @@ export function JobDetailScreen() {
                   color={Colors.grey300}
                 />
               )}
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Add to Calendar */}
+        {(job.status === "accepted" || job.status === "in_progress") && (
+          <TouchableOpacity
+            style={styles.messageCard}
+            activeOpacity={0.7}
+            onPress={async () => {
+              const ok = await addJobToCalendar(job, enquiry, customer);
+              if (ok) {
+                Alert.alert("Added", "Job has been added to your calendar.");
+              }
+            }}
+          >
+            <View style={styles.messageCardInner}>
+              <View style={styles.messageIconWrap}>
+                <Ionicons name="calendar-outline" size={20} color={Colors.primary} />
+              </View>
+              <View style={styles.messageCardText}>
+                <Text style={styles.messageCardTitle}>Add to Calendar</Text>
+                <Text style={styles.messageCardSub}>
+                  Export this job to your device calendar
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={Colors.grey300}
+              />
             </View>
           </TouchableOpacity>
         )}
