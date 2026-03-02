@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RouteProp } from '@react-navigation/native';
 import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
 import { InputField } from '@/components/shared/InputField';
 import { PrimaryButton } from '@/components/shared/PrimaryButton';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
-import { Spacing } from '@/constants/spacing';
+import { Spacing, BorderRadius } from '@/constants/spacing';
 import { validateField } from '@/utils/validation';
 import type { AuthStackParamList } from '@/types/navigation';
 
@@ -17,19 +16,19 @@ type Nav = NativeStackNavigationProp<AuthStackParamList>;
 
 export function SignInScreen() {
   const nav = useNavigation<Nav>();
-  const route = useRoute();
-  const params = route.params as { role?: string } | undefined;
-  const selectedRole = params?.role;
-  const signIn = useAuthStore((s) => s.signIn);
+  const sendOtp = useAuthStore((s) => s.sendOtp);
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [isNewUser, setIsNewUser] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
 
-  const handleSignIn = async () => {
+  const handleContinue = async () => {
     const e: Record<string, string | undefined> = {};
     e.email = validateField(email, { required: true, email: true }) ?? undefined;
-    e.password = validateField(password, { required: true }) ?? undefined;
+    if (isNewUser) {
+      e.fullName = validateField(fullName, { required: true }) ?? undefined;
+    }
     if (Object.values(e).some(Boolean)) {
       setErrors(e);
       return;
@@ -37,9 +36,15 @@ export function SignInScreen() {
     setErrors({});
     setLoading(true);
     try {
-      await signIn(email.trim(), password);
+      await sendOtp({
+        email: email.trim(),
+        shouldCreateUser: true,
+        fullName: isNewUser ? fullName.trim() : undefined,
+        role: 'customer',
+      });
+      nav.navigate('OtpVerification', { email: email.trim() });
     } catch (err: any) {
-      Alert.alert('Sign In Failed', err.message);
+      Alert.alert('Error', err.message);
     } finally {
       setLoading(false);
     }
@@ -53,9 +58,23 @@ export function SignInScreen() {
       >
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
-            <Text style={styles.logo}>Plumberly</Text>
-            <Text style={styles.subtitle}>Sign in to your account</Text>
+            <Text style={styles.logo}>Flux Service</Text>
+            <Text style={styles.subtitle}>
+              {isNewUser ? 'Create your account' : 'Sign in to your account'}
+            </Text>
           </View>
+
+          {isNewUser && (
+            <InputField
+              label="Full Name"
+              value={fullName}
+              onChangeText={setFullName}
+              error={errors.fullName}
+              autoCapitalize="words"
+              autoComplete="name"
+              placeholder="John Smith"
+            />
+          )}
 
           <InputField
             label="Email"
@@ -68,42 +87,35 @@ export function SignInScreen() {
             placeholder="you@example.com"
           />
 
-          <InputField
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            error={errors.password}
-            secureTextEntry
-            placeholder="Your password"
-          />
-
-          <PrimaryButton title="Sign In" onPress={handleSignIn} loading={loading} />
+          <PrimaryButton title="Continue" onPress={handleContinue} loading={loading} />
 
           <TouchableOpacity
-            style={styles.link}
-            onPress={() => {
-              if (selectedRole === 'plumber') {
-                nav.navigate('PlumberRegistration', { role: 'plumber' } as any);
-              } else {
-                nav.navigate('CreateAccount', { role: selectedRole } as any);
-              }
-            }}
+            style={styles.toggleLink}
+            onPress={() => setIsNewUser((v) => !v)}
           >
-            <Text style={styles.linkText}>
-              Don't have an account? <Text style={styles.linkBold}>Create one</Text>
+            <Text style={styles.toggleText}>
+              {isNewUser
+                ? 'Already have an account? '
+                : 'New here? '}
+              <Text style={styles.toggleBold}>
+                {isNewUser ? 'Sign in' : 'Create an account'}
+              </Text>
             </Text>
           </TouchableOpacity>
 
-          {!selectedRole && (
-            <TouchableOpacity
-              style={styles.link}
-              onPress={() => nav.navigate('PlumberRegistration' as any)}
-            >
-              <Text style={styles.linkText}>
-                Are you a plumber? <Text style={styles.linkBold}>Register here</Text>
-              </Text>
-            </TouchableOpacity>
-          )}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <TouchableOpacity
+            style={styles.plumberButton}
+            onPress={() => nav.navigate('PlumberRegistration' as any)}
+          >
+            <Text style={styles.plumberButtonTitle}>Plumber Portal</Text>
+            <Text style={styles.plumberButtonSub}>Sign in or register as a tradesperson</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </ScreenWrapper>
@@ -131,16 +143,50 @@ const styles = StyleSheet.create({
     color: Colors.grey500,
     marginTop: Spacing.sm,
   },
-  link: {
+  toggleLink: {
     alignItems: 'center',
     marginTop: Spacing.lg,
   },
-  linkText: {
+  toggleText: {
     ...Typography.bodySmall,
     color: Colors.grey700,
   },
-  linkBold: {
+  toggleBold: {
     color: Colors.primary,
     fontWeight: '600',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.xl,
+    marginBottom: Spacing.xl,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.grey300,
+  },
+  dividerText: {
+    ...Typography.bodySmall,
+    color: Colors.grey500,
+    marginHorizontal: Spacing.base,
+  },
+  plumberButton: {
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.base,
+    paddingHorizontal: Spacing.lg,
+    alignItems: 'center',
+  },
+  plumberButtonTitle: {
+    ...Typography.body,
+    color: Colors.primary,
+    fontWeight: '700',
+  },
+  plumberButtonSub: {
+    ...Typography.bodySmall,
+    color: Colors.grey500,
+    marginTop: 2,
   },
 });
