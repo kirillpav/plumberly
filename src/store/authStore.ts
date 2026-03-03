@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '@/lib/supabase';
 import type { UserProfile, UserRole, PlumberDetails, ServicesType } from '@/types/index';
 import type { Session } from '@supabase/supabase-js';
@@ -48,6 +49,7 @@ interface AuthState {
     phone?: string;
     token: string;
   }) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
 }
@@ -196,6 +198,41 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       : { phone: phone!, token, type: 'sms' as const };
     const { error } = await supabase.auth.verifyOtp(params);
     if (error) throw error;
+  },
+
+  signInWithGoogle: async () => {
+    const redirectUrl = 'plumberly://';
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+        skipBrowserRedirect: true,
+      },
+    });
+    if (error) throw error;
+    if (!data.url) throw new Error('No OAuth URL returned');
+
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+    if (result.type !== 'success') return;
+
+    // Extract tokens from the redirect URL fragment
+    const url = result.url;
+    const fragment = url.split('#')[1];
+    if (!fragment) throw new Error('No auth data in redirect');
+
+    const params = new URLSearchParams(fragment);
+    const access_token = params.get('access_token');
+    const refresh_token = params.get('refresh_token');
+
+    if (!access_token || !refresh_token) {
+      throw new Error('Missing tokens in redirect');
+    }
+
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token,
+      refresh_token,
+    });
+    if (sessionError) throw sessionError;
   },
 
   signOut: async () => {

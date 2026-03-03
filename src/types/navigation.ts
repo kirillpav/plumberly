@@ -6,6 +6,7 @@ export type OnboardingStackParamList = {
   RoleSelection: undefined;
   OnboardingSlides: { role: UserRole };
   SignIn: { role: UserRole };
+  CreateAccount: { role: UserRole };
   OtpVerification: { email?: string; phone?: string };
   PlumberRegistration: { role: UserRole };
 };
@@ -13,6 +14,7 @@ export type OnboardingStackParamList = {
 // Auth
 export type AuthStackParamList = {
   SignIn: undefined;
+  CreateAccount: undefined;
   PlumberRegistration: undefined;
   PlumberSignIn: undefined;
   OtpVerification: { email?: string; phone?: string };

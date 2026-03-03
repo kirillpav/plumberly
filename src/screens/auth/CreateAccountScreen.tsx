@@ -16,7 +16,7 @@ import { PrimaryButton } from "@/components/shared/PrimaryButton";
 import { useAuthStore } from "@/store/authStore";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
-import { Spacing } from "@/constants/spacing";
+import { Spacing, BorderRadius } from "@/constants/spacing";
 import { validateField } from "@/utils/validation";
 import type { AuthStackParamList } from "@/types/navigation";
 
@@ -25,10 +25,12 @@ type Nav = NativeStackNavigationProp<AuthStackParamList>;
 export function CreateAccountScreen() {
   const nav = useNavigation<Nav>();
   const signUp = useAuthStore((s) => s.signUp);
+  const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
 
   const handleSignUp = async () => {
@@ -56,6 +58,17 @@ export function CreateAccountScreen() {
       Alert.alert("Sign Up Failed", err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err: any) {
+      Alert.alert("Google Sign Up Failed", err.message);
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -105,6 +118,16 @@ export function CreateAccountScreen() {
             onPress={handleSignUp}
             loading={loading}
           />
+
+          <TouchableOpacity
+            style={styles.googleButton}
+            onPress={handleGoogleSignUp}
+            disabled={googleLoading}
+          >
+            <Text style={styles.googleButtonText}>
+              {googleLoading ? "Signing up…" : "G  Sign up with Google"}
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </ScreenWrapper>
@@ -121,5 +144,18 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: Colors.grey500,
     marginBottom: Spacing.xl,
+  },
+  googleButton: {
+    borderWidth: 1.5,
+    borderColor: Colors.grey300,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.base,
+    alignItems: "center",
+    marginTop: Spacing.base,
+  },
+  googleButtonText: {
+    ...Typography.body,
+    color: Colors.grey700,
+    fontWeight: "600",
   },
 });

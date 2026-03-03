@@ -16,19 +16,18 @@ type Nav = NativeStackNavigationProp<AuthStackParamList>;
 
 export function SignInScreen() {
   const nav = useNavigation<Nav>();
-  const sendOtp = useAuthStore((s) => s.sendOtp);
+  const signIn = useAuthStore((s) => s.signIn);
+  const signInWithGoogle = useAuthStore((s) => s.signInWithGoogle);
   const [email, setEmail] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [isNewUser, setIsNewUser] = useState(false);
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
 
-  const handleContinue = async () => {
+  const handleSignIn = async () => {
     const e: Record<string, string | undefined> = {};
     e.email = validateField(email, { required: true, email: true }) ?? undefined;
-    if (isNewUser) {
-      e.fullName = validateField(fullName, { required: true }) ?? undefined;
-    }
+    e.password = validateField(password, { required: true }) ?? undefined;
     if (Object.values(e).some(Boolean)) {
       setErrors(e);
       return;
@@ -36,17 +35,22 @@ export function SignInScreen() {
     setErrors({});
     setLoading(true);
     try {
-      await sendOtp({
-        email: email.trim(),
-        shouldCreateUser: true,
-        fullName: isNewUser ? fullName.trim() : undefined,
-        role: 'customer',
-      });
-      nav.navigate('OtpVerification', { email: email.trim() });
+      await signIn(email.trim(), password);
     } catch (err: any) {
-      Alert.alert('Error', err.message);
+      Alert.alert('Sign In Failed', err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err: any) {
+      Alert.alert('Google Sign In Failed', err.message);
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -59,22 +63,8 @@ export function SignInScreen() {
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
             <Text style={styles.logo}>Flux Service</Text>
-            <Text style={styles.subtitle}>
-              {isNewUser ? 'Create your account' : 'Sign in to your account'}
-            </Text>
+            <Text style={styles.subtitle}>Sign in to your account</Text>
           </View>
-
-          {isNewUser && (
-            <InputField
-              label="Full Name"
-              value={fullName}
-              onChangeText={setFullName}
-              error={errors.fullName}
-              autoCapitalize="words"
-              autoComplete="name"
-              placeholder="John Smith"
-            />
-          )}
 
           <InputField
             label="Email"
@@ -87,19 +77,34 @@ export function SignInScreen() {
             placeholder="you@example.com"
           />
 
-          <PrimaryButton title="Continue" onPress={handleContinue} loading={loading} />
+          <InputField
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            error={errors.password}
+            secureTextEntry
+            placeholder="Your password"
+          />
+
+          <PrimaryButton title="Sign In" onPress={handleSignIn} loading={loading} />
+
+          <TouchableOpacity
+            style={styles.googleButton}
+            onPress={handleGoogleSignIn}
+            disabled={googleLoading}
+          >
+            <Text style={styles.googleButtonText}>
+              {googleLoading ? 'Signing in…' : 'G  Sign in with Google'}
+            </Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.toggleLink}
-            onPress={() => setIsNewUser((v) => !v)}
+            onPress={() => nav.navigate('CreateAccount')}
           >
             <Text style={styles.toggleText}>
-              {isNewUser
-                ? 'Already have an account? '
-                : 'New here? '}
-              <Text style={styles.toggleBold}>
-                {isNewUser ? 'Sign in' : 'Create an account'}
-              </Text>
+              New here?{' '}
+              <Text style={styles.toggleBold}>Create an account</Text>
             </Text>
           </TouchableOpacity>
 
@@ -142,6 +147,19 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: Colors.grey500,
     marginTop: Spacing.sm,
+  },
+  googleButton: {
+    borderWidth: 1.5,
+    borderColor: Colors.grey300,
+    borderRadius: BorderRadius.md,
+    paddingVertical: Spacing.base,
+    alignItems: 'center',
+    marginTop: Spacing.base,
+  },
+  googleButtonText: {
+    ...Typography.body,
+    color: Colors.grey700,
+    fontWeight: '600',
   },
   toggleLink: {
     alignItems: 'center',
