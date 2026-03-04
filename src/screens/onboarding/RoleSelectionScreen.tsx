@@ -42,8 +42,8 @@ export function RoleSelectionScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.logo}>Plumberly</Text>
-          <Text style={styles.subtitle}>How would you like to use Plumberly?</Text>
+          <Text style={styles.logo}>FluxService</Text>
+          <Text style={styles.subtitle}>How would you like to use FluxService?</Text>
         </View>
 
         <View style={styles.cards}>

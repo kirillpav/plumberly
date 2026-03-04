@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Plumberly is a two-sided marketplace React Native (Expo) app connecting customers with plumbers in the UK. Customers interact with an AI chatbot for plumbing diagnosis, create enquiries, and browse plumbers on a map. Plumbers manage jobs, submit quotes, and track performance on a dashboard.
+FluxService is a two-sided marketplace React Native (Expo) app connecting customers with plumbers in the UK. Customers interact with an AI chatbot for plumbing diagnosis, create enquiries, and browse plumbers on a map. Plumbers manage jobs, submit quotes, and track performance on a dashboard.
 
 ## Commands
 

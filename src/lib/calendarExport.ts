@@ -94,7 +94,7 @@ export async function addJobToCalendar(
     job.scheduled_time
   );
 
-  const title = `Plumberly: ${enquiry?.title ?? "Job"}`;
+  const title = `FluxService: ${enquiry?.title ?? "Job"}`;
 
   const notesParts: string[] = [];
   if (customer?.full_name) notesParts.push(`Customer: ${customer.full_name}`);

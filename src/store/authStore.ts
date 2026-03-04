@@ -201,7 +201,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signInWithGoogle: async () => {
-    const redirectUrl = 'plumberly://';
+    const redirectUrl = 'fluxservice://';
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

@@ -68,7 +68,7 @@ export const Config = {
         { key: 'location', label: 'Where in the property?', type: 'select', options: ['Kitchen', 'Bathroom', 'Basement', 'Outside', 'Other'], required: false },
       ],
     } as Record<IntakeIssueType, IntakeFieldDefinition[]>,
-    triageSystemPrompt: `You are Plumberly's triage AI. Analyze the plumbing issue and respond with JSON only.
+    triageSystemPrompt: `You are FluxService's triage AI. Analyze the plumbing issue and respond with JSON only.
 
 Given the intake data and conversation, determine:
 1. emergency_flag: true if gas leak, gushing water, sewage backup, water near electrics, structural damage

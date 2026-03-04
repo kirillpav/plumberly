@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Plumberly",
-    "slug": "plumberly",
-    "scheme": "plumberly",
+    "name": "FluxService",
+    "slug": "fluxservice",
+    "scheme": "fluxservice",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,14 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.plumberly.app",
+      "bundleIdentifier": "com.fluxservice.app",
       "config": {
         "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
       },
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Plumberly uses your location to show nearby plumbers.",
-        "NSCameraUsageDescription": "Plumberly needs camera access to take photos of plumbing issues.",
-        "NSPhotoLibraryUsageDescription": "Plumberly needs photo library access to attach images to enquiries."
+        "NSLocationWhenInUseUsageDescription": "FluxService uses your location to show nearby plumbers.",
+        "NSCameraUsageDescription": "FluxService needs camera access to take photos of plumbing issues.",
+        "NSPhotoLibraryUsageDescription": "FluxService needs photo library access to attach images to enquiries."
       }
     },
     "android": {
@@ -32,7 +32,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.plumberly.app",
+      "package": "com.fluxservice.app",
       "config": {
         "googleMaps": {
           "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
@@ -55,14 +55,14 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Plumberly uses your location to show nearby plumbers."
+          "locationWhenInUsePermission": "FluxService uses your location to show nearby plumbers."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Plumberly needs photo library access to attach images to enquiries.",
-          "cameraPermission": "Plumberly needs camera access to take photos of plumbing issues."
+          "photosPermission": "FluxService needs photo library access to attach images to enquiries.",
+          "cameraPermission": "FluxService needs camera access to take photos of plumbing issues."
         }
       ],
       "expo-web-browser"
