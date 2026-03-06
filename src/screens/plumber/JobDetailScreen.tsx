@@ -682,12 +682,30 @@ export function JobDetailScreen() {
           </View>
         )}
         {job.status === "deposit_paid" && (
-          <View style={[styles.waitingBanner, { backgroundColor: '#E8F5E9' }]}>
-            <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
-            <Text style={[styles.waitingText, { color: Colors.success }]}>
-              Deposit confirmed — ready to start
-            </Text>
-          </View>
+          <>
+            <View style={[styles.waitingBanner, { backgroundColor: '#E8F5E9' }]}>
+              <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
+              <Text style={[styles.waitingText, { color: Colors.success }]}>
+                Deposit confirmed — ready to start
+              </Text>
+            </View>
+            <PrimaryButton
+              title="Start Job"
+              onPress={async () => {
+                setActionLoading(true);
+                try {
+                  await updateJobStatus(job.id, "in_progress");
+                  setJob({ ...job, status: "in_progress" });
+                } catch (err: any) {
+                  Alert.alert("Error", err.message);
+                } finally {
+                  setActionLoading(false);
+                }
+              }}
+              loading={actionLoading}
+              style={{ marginTop: Spacing.md }}
+            />
+          </>
         )}
 
         {/* Declined — requote or dismiss */}

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Linking } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '@/lib/supabase';
 import { sendPushNotification } from '@/lib/notifications';
 import type { Job, JobStatus, PlumberDetails } from '@/types/index';
@@ -179,10 +179,10 @@ export const useJobStore = create<JobState>((set, get) => ({
       throw new Error('No checkout URL returned');
     }
 
-    // Open Stripe Checkout in the system browser.
-    // The deep link return (?status=success) is cosmetic only —
-    // payment confirmation comes exclusively via webhook.
-    await Linking.openURL(checkout_url);
+    // Open Stripe Checkout in an in-app browser.
+    // openAuthSessionAsync auto-closes when it detects the fluxservice:// redirect.
+    // The return is cosmetic — payment confirmation comes exclusively via webhook.
+    await WebBrowser.openAuthSessionAsync(checkout_url, 'fluxservice://payment');
 
     await get().fetchJobs();
   },
