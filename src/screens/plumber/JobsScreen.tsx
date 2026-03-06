@@ -98,7 +98,7 @@ export function JobsScreen() {
   }, [newEnquiries, plumberRegions, hasRegions]);
 
   const existingJobs = jobs.filter((j) =>
-    ['pending', 'quoted', 'declined', 'accepted', 'in_progress'].includes(j.status) ||
+    ['pending', 'quoted', 'declined', 'accepted', 'deposit_paid', 'in_progress'].includes(j.status) ||
     (j.status === 'cancelled' && j.notes === 'not_selected')
   );
   const completedJobs = jobs.filter((j) => j.status === 'completed');

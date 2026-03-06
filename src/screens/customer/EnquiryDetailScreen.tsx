@@ -42,6 +42,7 @@ type JobWithPlumber = Job & {
 const statusColors: Record<string, string> = {
   new: Colors.statusNew,
   accepted: Colors.statusAccepted,
+  deposit_paid: Colors.success,
   in_progress: Colors.primary,
   completed: Colors.statusCompleted,
 };
@@ -137,7 +138,7 @@ export function EnquiryDetailScreen() {
 
   // Derive job categories
   const activeJob = allJobs.find(
-    (j) => j.status === "in_progress" || j.status === "completed",
+    (j) => ["accepted", "deposit_paid", "in_progress", "completed"].includes(j.status),
   );
   const quotedJobs = allJobs.filter((j) => j.status === "quoted");
   const pendingJobs = allJobs.filter((j) => j.status === "pending");
@@ -147,11 +148,8 @@ export function EnquiryDetailScreen() {
     setActionLoading(jobId);
     try {
       await acceptQuote(jobId);
-      await loadData();
-      Alert.alert(
-        "Job Started",
-        "You have accepted the quote. The plumber has been notified and the job is now in progress.",
-      );
+      // Checkout has opened in the browser. The real-time subscription
+      // will update the UI when the webhook confirms payment.
     } catch (err: any) {
       Alert.alert("Error", err.message ?? "Failed to accept quote.");
     } finally {
@@ -313,14 +311,30 @@ export function EnquiryDetailScreen() {
           </View>
         ) : null}
 
-        {/* Active job (in_progress or completed) — single plumber chosen */}
+        {/* Active job (accepted / deposit_paid / in_progress / completed) */}
         {activeJob && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Assigned Plumber</Text>
-            <View style={styles.plumberCardAccepted}>
-              <View style={styles.acceptedBadge}>
-                <Ionicons name="checkmark-circle" size={14} color={Colors.white} />
-                <Text style={styles.acceptedBadgeText}>Quote Accepted</Text>
+            <View style={[
+              styles.plumberCardAccepted,
+              activeJob.status === "accepted" && { borderColor: Colors.warning },
+            ]}>
+              <View style={[
+                styles.acceptedBadge,
+                activeJob.status === "accepted" && { backgroundColor: Colors.warning },
+              ]}>
+                <Ionicons
+                  name={activeJob.status === "accepted" ? "card-outline" : "checkmark-circle"}
+                  size={14}
+                  color={Colors.white}
+                />
+                <Text style={styles.acceptedBadgeText}>
+                  {activeJob.status === "accepted"
+                    ? "Payment Processing"
+                    : activeJob.status === "deposit_paid"
+                      ? "Deposit Paid"
+                      : "Quote Accepted"}
+                </Text>
               </View>
               <View style={styles.plumberCardRow}>
                 <Avatar
@@ -372,7 +386,7 @@ export function EnquiryDetailScreen() {
               </View>
             )}
 
-            {(activeJob.status === "accepted" || activeJob.status === "in_progress") && (
+            {(activeJob.status === "deposit_paid" || activeJob.status === "in_progress") && (
               <TouchableOpacity
                 style={styles.messageCard}
                 activeOpacity={0.7}
@@ -412,6 +426,22 @@ export function EnquiryDetailScreen() {
                   )}
                 </View>
               </TouchableOpacity>
+            )}
+
+            {activeJob.status === "accepted" && (
+              <>
+                <View style={styles.waitingBanner}>
+                  <Ionicons name="card-outline" size={18} color={Colors.warning} />
+                  <Text style={[styles.waitingText, { color: Colors.warning }]}>
+                    Payment not yet completed
+                  </Text>
+                </View>
+                <PrimaryButton
+                  title="Complete Payment"
+                  onPress={() => handleAcceptQuote(activeJob.id)}
+                  loading={actionLoading === activeJob.id}
+                />
+              </>
             )}
 
             {(activeJob.status === "in_progress" || activeJob.status === "completed") && (

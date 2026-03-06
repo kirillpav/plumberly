@@ -43,6 +43,7 @@ function getStatusLabel(status: string) {
     case 'pending': return 'Pending';
     case 'completed': return 'Completed';
     case 'accepted': return 'Accepted';
+    case 'deposit_paid': return 'Deposit Paid';
     default: return status;
   }
 }
@@ -174,7 +175,7 @@ export function DashboardScreen() {
   // Group jobs by their time slot for calendar-style display
   const scheduleGroups = useMemo(() => {
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    const acceptedStatuses = ['accepted', 'in_progress', 'completed'];
+    const acceptedStatuses = ['accepted', 'deposit_paid', 'in_progress', 'completed'];
     const todayJobs = jobs
       .filter((j) => {
         if (!acceptedStatuses.includes(j.status)) return false;
@@ -202,7 +203,7 @@ export function DashboardScreen() {
     const weekStart = startOfWeek(now, { weekStartsOn: 1 });
     const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
 
-    const acceptedStatuses = ['accepted', 'in_progress', 'completed'];
+    const acceptedStatuses = ['accepted', 'deposit_paid', 'in_progress', 'completed'];
     const getJobDate = (j: Job) => j.scheduled_date ?? j.enquiry?.preferred_date ?? null;
 
     const scheduledJobs = jobs.filter((j) => acceptedStatuses.includes(j.status));

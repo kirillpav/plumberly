@@ -131,7 +131,7 @@ create table public.jobs (
   customer_id uuid references public.profiles(id) not null,
   plumber_id uuid references public.profiles(id) not null,
   status text not null default 'pending'
-    check (status in ('pending', 'quoted', 'accepted', 'in_progress', 'completed', 'cancelled')),
+    check (status in ('pending', 'quoted', 'declined', 'accepted', 'deposit_paid', 'in_progress', 'completed', 'cancelled')),
   quote_amount numeric(10,2),
   scheduled_date date,
   scheduled_time text,

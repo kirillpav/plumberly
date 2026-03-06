@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { Linking } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import { sendPushNotification } from '@/lib/notifications';
 import type { Job, JobStatus, PlumberDetails } from '@/types/index';
@@ -58,6 +59,17 @@ export const useJobStore = create<JobState>((set, get) => ({
     }
     if (plumberDetails.status === 'suspended') {
       throw new Error('Your account is suspended. Please contact support.');
+    }
+
+    // Check payouts are enabled via Connect account
+    const { data: connectAccount } = await supabase
+      .from('plumber_connect_accounts')
+      .select('payouts_enabled')
+      .eq('party_id', plumberId)
+      .maybeSingle();
+
+    if (!connectAccount?.payouts_enabled) {
+      throw new Error('Please complete payout setup before accepting jobs.');
     }
 
     const { data: existing } = await supabase
@@ -147,68 +159,30 @@ export const useJobStore = create<JobState>((set, get) => ({
   },
 
   acceptQuote: async (jobId) => {
-    const { error } = await supabase
-      .from('jobs')
-      .update({ status: 'in_progress' })
-      .eq('id', jobId);
-    if (error) throw error;
+    // Call stripe-create-checkout edge function to create a Stripe Checkout session.
+    // The edge function validates the job, creates a payment record, and sets
+    // job status to 'accepted'. The webhook will handle deposit_paid, competing
+    // job cancellation, and notifications.
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) throw new Error('Not authenticated');
 
-    // Fetch job directly from DB (store may not be populated on customer side)
-    const { data: job } = await supabase
-      .from('jobs')
-      .select('id, enquiry_id, plumber_id, customer_id')
-      .eq('id', jobId)
-      .single();
+    const res = await supabase.functions.invoke('stripe-create-checkout', {
+      body: { job_id: jobId },
+    });
 
-    if (job) {
-      await supabase
-        .from('enquiries')
-        .update({ status: 'in_progress' })
-        .eq('id', job.enquiry_id);
-
-      // Cancel all other active jobs for this enquiry (not already cancelled ones)
-      const { data: otherJobs } = await supabase
-        .from('jobs')
-        .select('id, plumber_id')
-        .eq('enquiry_id', job.enquiry_id)
-        .neq('id', jobId)
-        .in('status', ['pending', 'quoted', 'declined', 'accepted']);
-
-      if (otherJobs && otherJobs.length > 0) {
-        const otherJobIds = otherJobs.map((j) => j.id);
-        await supabase
-          .from('jobs')
-          .update({ status: 'cancelled', notes: 'not_selected' })
-          .in('id', otherJobIds);
-      }
-
-      const { data: customer } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', job.customer_id)
-        .single();
-
-      const customerName = customer?.full_name || 'The customer';
-
-      sendPushNotification({
-        recipientUserId: job.plumber_id,
-        title: 'Quote Accepted — Job Started',
-        body: `${customerName} has accepted your quote. The job is now in progress.`,
-        data: { jobId, type: 'quote_accepted' },
-      });
-
-      // Notify non-selected plumbers
-      if (otherJobs) {
-        for (const other of otherJobs) {
-          sendPushNotification({
-            recipientUserId: other.plumber_id,
-            title: 'Job Update',
-            body: `${customerName} has selected another plumber for this job.`,
-            data: { jobId: other.id, type: 'not_selected' },
-          });
-        }
-      }
+    if (res.error) {
+      throw new Error(res.error.message || 'Failed to create checkout session');
     }
+
+    const { checkout_url } = res.data as { checkout_url: string };
+    if (!checkout_url) {
+      throw new Error('No checkout URL returned');
+    }
+
+    // Open Stripe Checkout in the system browser.
+    // The deep link return (?status=success) is cosmetic only —
+    // payment confirmation comes exclusively via webhook.
+    await Linking.openURL(checkout_url);
 
     await get().fetchJobs();
   },

@@ -159,7 +159,7 @@ export function EnquiriesScreen() {
       const quotedJobs = jobs.filter((j) => j.status === "quoted");
       const pendingJobs = jobs.filter((j) => j.status === "pending");
       const activeJob = jobs.find((j) =>
-        ["in_progress", "completed"].includes(j.status),
+        ["accepted", "deposit_paid", "in_progress", "completed"].includes(j.status),
       );
 
       // Compute total unread count across all jobs for this enquiry

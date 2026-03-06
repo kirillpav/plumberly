@@ -108,7 +108,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             .select('*')
             .eq('user_id', userId)
             .single();
-          set({ plumberDetails: details as PlumberDetails | null });
+
+          // Sync payouts status with Stripe, then read from DB
+          const { data: statusData } = await supabase.functions.invoke(
+            'stripe-connect-status',
+            { method: 'POST', body: {} },
+          ).catch(() => ({ data: null }));
+
+          const payoutsEnabled = statusData?.payouts_enabled ?? false;
+
+          set({
+            plumberDetails: details
+              ? { ...details, payouts_enabled: payoutsEnabled } as PlumberDetails
+              : null,
+          });
         }
         return;
       }

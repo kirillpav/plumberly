@@ -115,7 +115,7 @@ export function JobDetailScreen() {
       (j) =>
         j.id !== job?.id &&
         j.scheduled_date === date &&
-        ["quoted", "accepted", "in_progress"].includes(j.status),
+        ["quoted", "accepted", "deposit_paid", "in_progress"].includes(j.status),
     );
 
   const handleSubmitQuote = async () => {
@@ -419,7 +419,7 @@ export function JobDetailScreen() {
           {enquiry?.region && (
             <Text style={styles.meta}>Region: {enquiry.region}</Text>
           )}
-          {['accepted', 'in_progress', 'completed'].includes(job.status) && enquiry?.address_line_1 ? (
+          {['accepted', 'deposit_paid', 'in_progress', 'completed'].includes(job.status) && enquiry?.address_line_1 ? (
             <View style={styles.addressRow}>
               <Ionicons name="location-outline" size={16} color={Colors.primary} />
               <Text style={styles.addressText}>
@@ -428,7 +428,7 @@ export function JobDetailScreen() {
                   .join(', ')}
               </Text>
             </View>
-          ) : !['accepted', 'in_progress', 'completed'].includes(job.status) ? (
+          ) : !['accepted', 'deposit_paid', 'in_progress', 'completed'].includes(job.status) ? (
             <View style={styles.addressLockedBanner}>
               <Ionicons name="lock-closed-outline" size={16} color={Colors.grey500} />
               <Text style={styles.addressLockedText}>
@@ -514,7 +514,7 @@ export function JobDetailScreen() {
         )}
 
         {/* Message Customer */}
-        {(job.status === "accepted" || job.status === "in_progress") && (
+        {(job.status === "deposit_paid" || job.status === "in_progress") && (
           <TouchableOpacity
             style={styles.messageCard}
             activeOpacity={0.7}
@@ -553,7 +553,7 @@ export function JobDetailScreen() {
         )}
 
         {/* Add to Calendar */}
-        {(job.status === "accepted" || job.status === "in_progress") && (
+        {(job.status === "deposit_paid" || job.status === "in_progress") && (
           <TouchableOpacity
             style={styles.messageCard}
             activeOpacity={0.7}
@@ -665,17 +665,27 @@ export function JobDetailScreen() {
         )}
 
         {/* Waiting for customer banner */}
-        {(job.status === "quoted" || job.status === "accepted") && (
+        {job.status === "quoted" && (
           <View style={styles.waitingBanner}>
-            <Ionicons
-              name="hourglass-outline"
-              size={20}
-              color={Colors.primary}
-            />
+            <Ionicons name="hourglass-outline" size={20} color={Colors.primary} />
             <Text style={styles.waitingText}>
-              {job.status === "quoted"
-                ? "Quote sent — waiting for the customer to accept"
-                : "Customer accepted — job starting soon"}
+              Quote sent — waiting for the customer to accept
+            </Text>
+          </View>
+        )}
+        {job.status === "accepted" && (
+          <View style={styles.waitingBanner}>
+            <Ionicons name="card-outline" size={20} color={Colors.primary} />
+            <Text style={styles.waitingText}>
+              Customer is completing payment
+            </Text>
+          </View>
+        )}
+        {job.status === "deposit_paid" && (
+          <View style={[styles.waitingBanner, { backgroundColor: '#E8F5E9' }]}>
+            <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
+            <Text style={[styles.waitingText, { color: Colors.success }]}>
+              Deposit confirmed — ready to start
             </Text>
           </View>
         )}

@@ -5,6 +5,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
 import { Avatar } from '@/components/shared/Avatar';
+import { ConnectSetup } from '@/components/plumber/ConnectSetup';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -22,7 +23,7 @@ const MENU_ITEMS: { icon: keyof typeof Ionicons.glyphMap; label: string; route?:
 
 export function AccountScreen() {
   const nav = useNavigation<Nav>();
-  const { profile, signOut } = useAuthStore();
+  const { profile, plumberDetails, signOut } = useAuthStore();
 
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure?', [
@@ -41,6 +42,8 @@ export function AccountScreen() {
           </Text>
           <Text style={styles.email}>{profile?.email}</Text>
         </View>
+
+        {plumberDetails && !plumberDetails.payouts_enabled && <ConnectSetup />}
 
         <View style={styles.menu}>
           {MENU_ITEMS.map((item) => (
