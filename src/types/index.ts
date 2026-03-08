@@ -148,6 +148,21 @@ export interface Review {
   job?: { enquiry_id: string; enquiry?: { title: string } };
 }
 
+export type PayoutTransferStatus = 'pending' | 'scheduled' | 'created' | 'reversed' | 'failed' | 'cancelled';
+
+export interface PayoutTransfer {
+  id: string;
+  job_id: string;
+  plumber_id: string;
+  amount_minor: number;
+  currency: string;
+  status: PayoutTransferStatus;
+  scheduled_transfer_at: string | null;
+  delay_reason: string | null;
+  platform_fee_minor: number;
+  created_at: string;
+}
+
 export interface Region {
   name: string;
   coordinates: Array<{ latitude: number; longitude: number }>;

@@ -17,6 +17,7 @@ import { InputField } from "@/components/shared/InputField";
 import { PrimaryButton } from "@/components/shared/PrimaryButton";
 import { ChatBubble } from "@/components/ChatBubble";
 import { CompletionIndicator } from "@/components/CompletionIndicator";
+import { PayoutStatus } from "@/components/PayoutStatus";
 import { PinDisplay } from "@/components/PinDisplay";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { useJobStore } from "@/store/jobStore";
@@ -605,6 +606,13 @@ export function JobDetailScreen() {
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Submit Your Quote</Text>
 
+            <View style={styles.platformFeeNotice}>
+              <Ionicons name="information-circle-outline" size={18} color={Colors.warning} />
+              <Text style={styles.platformFeeText}>
+                A {"\u00A3"}20 platform fee will be deducted from your payout.
+              </Text>
+            </View>
+
             <InputField
               label="Quote Amount (GBP)"
               value={quoteInput}
@@ -727,6 +735,13 @@ export function JobDetailScreen() {
               </View>
             </View>
 
+            <View style={styles.platformFeeNotice}>
+              <Ionicons name="information-circle-outline" size={18} color={Colors.warning} />
+              <Text style={styles.platformFeeText}>
+                A {"\u00A3"}20 platform fee will be deducted from your payout.
+              </Text>
+            </View>
+
             <InputField
               label="New Quote Amount (GBP)"
               value={quoteInput}
@@ -774,6 +789,11 @@ export function JobDetailScreen() {
               <Text style={styles.dismissBtnText}>Don't show this listing</Text>
             </TouchableOpacity>
           </View>
+        )}
+
+        {/* Payout status after completion */}
+        {job.status === 'completed' && (
+          <PayoutStatus jobId={job.id} />
         )}
 
         {/* Completion confirmation */}
@@ -1122,6 +1142,20 @@ const styles = StyleSheet.create({
   addressLockedText: {
     ...Typography.caption,
     color: Colors.grey500,
+    flex: 1,
+  },
+  platformFeeNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    backgroundColor: "#FFF8E1",
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.base,
+  },
+  platformFeeText: {
+    ...Typography.caption,
+    color: Colors.warning,
     flex: 1,
   },
   spacer: { height: Spacing.xxl },

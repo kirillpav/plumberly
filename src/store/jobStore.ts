@@ -245,6 +245,19 @@ export const useJobStore = create<JobState>((set, get) => ({
         .from('enquiries')
         .update({ status: 'completed' })
         .eq('id', freshJob.enquiry_id);
+
+      // Schedule payout transfer (non-blocking)
+      try {
+        const { data: { session: activeSession } } = await supabase.auth.getSession();
+        if (activeSession?.access_token) {
+          await supabase.functions.invoke('stripe-create-transfer', {
+            body: { job_id: jobId },
+            headers: { Authorization: `Bearer ${activeSession.access_token}` },
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to schedule transfer:', err);
+      }
     }
 
     if (freshJob && !freshJob[otherField]) {
