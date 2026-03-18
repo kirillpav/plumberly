@@ -71,7 +71,9 @@ create table public.plumber_details (
   status text check (status in ('provisional', 'active', 'frozen', 'suspended')) default 'provisional',
   provisional_jobs_remaining integer default 5,
   payouts_enabled boolean default false,
-  frozen_reason text
+  frozen_reason text,
+  business_type text check (business_type in ('sole_trader', 'limited_company')),
+  vetting_metadata jsonb default '{}'
 );
 
 alter table public.plumber_details enable row level security;
@@ -189,7 +191,11 @@ begin
 
   -- If plumber, also create plumber_details
   if coalesce(new.raw_user_meta_data->>'role', 'customer') = 'plumber' then
-    insert into public.plumber_details (user_id, regions, hourly_rate, business_name, services_type, gas_safe_number, consent_to_checks, right_to_work)
+    insert into public.plumber_details (
+      user_id, regions, hourly_rate, business_name, services_type,
+      gas_safe_number, consent_to_checks, right_to_work,
+      business_type, vetting_metadata
+    )
     values (
       new.id,
       case
@@ -203,7 +209,13 @@ begin
       coalesce(new.raw_user_meta_data->>'services_type', 'no_gas'),
       new.raw_user_meta_data->>'gas_safe_number',
       coalesce((new.raw_user_meta_data->>'consent_to_checks')::boolean, false),
-      new.raw_user_meta_data->>'right_to_work'
+      new.raw_user_meta_data->>'right_to_work',
+      new.raw_user_meta_data->>'business_type',
+      case
+        when new.raw_user_meta_data->'vetting_metadata' is not null
+        then new.raw_user_meta_data->'vetting_metadata'
+        else '{}'::jsonb
+      end
     );
   end if;
 
@@ -332,6 +344,25 @@ create policy "Anyone can view enquiry images" on storage.objects
 
 create policy "Authenticated users can upload enquiry images" on storage.objects
   for insert with check (bucket_id = 'enquiry-images' and auth.role() = 'authenticated');
+
+-- =========================================================
+-- STORAGE BUCKET FOR VETTING DOCUMENTS (private)
+-- =========================================================
+insert into storage.buckets (id, name, public)
+values ('vetting-documents', 'vetting-documents', false)
+on conflict (id) do nothing;
+
+create policy "Authenticated users can upload vetting documents" on storage.objects
+  for insert with check (bucket_id = 'vetting-documents' and auth.role() = 'authenticated');
+
+create policy "Users can view own vetting documents" on storage.objects
+  for select using (bucket_id = 'vetting-documents' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Users can update own vetting documents" on storage.objects
+  for update using (bucket_id = 'vetting-documents' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "Users can delete own vetting documents" on storage.objects
+  for delete using (bucket_id = 'vetting-documents' and (storage.foldername(name))[1] = auth.uid()::text);
 
 -- =========================================================
 -- FREEZE PLUMBER RPC (admin use)

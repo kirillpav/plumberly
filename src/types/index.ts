@@ -39,6 +39,8 @@ export interface PlumberDetails {
   provisional_jobs_remaining: number;
   payouts_enabled: boolean;
   frozen_reason: string | null;
+  business_type: 'sole_trader' | 'limited_company' | null;
+  vetting_metadata: Record<string, unknown> | null;
 }
 
 export type EnquiryStatus = 'new' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';

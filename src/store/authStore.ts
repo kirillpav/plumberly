@@ -28,7 +28,9 @@ interface AuthState {
     gasSafeNumber?: string;
     consentToChecks?: boolean;
     rightToWork?: string;
-  }) => Promise<void>;
+    businessType?: 'sole_trader' | 'limited_company';
+    vettingMetadata?: Record<string, unknown>;
+  }) => Promise<{ userId: string | undefined; hasSession: boolean }>;
   sendOtp: (params: {
     email?: string;
     phone?: string;
@@ -160,8 +162,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (error) throw error;
   },
 
-  signUp: async ({ email, password, fullName, role, phone, regions, bio, businessName, servicesType, gasSafeNumber, consentToChecks, rightToWork }) => {
-    const { error } = await supabase.auth.signUp({
+  signUp: async ({ email, password, fullName, role, phone, regions, bio, businessName, servicesType, gasSafeNumber, consentToChecks, rightToWork, businessType, vettingMetadata }) => {
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -176,10 +178,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           ...(gasSafeNumber ? { gas_safe_number: gasSafeNumber } : {}),
           ...(consentToChecks !== undefined ? { consent_to_checks: consentToChecks } : {}),
           ...(rightToWork ? { right_to_work: rightToWork } : {}),
+          ...(businessType ? { business_type: businessType } : {}),
+          ...(vettingMetadata ? { vetting_metadata: vettingMetadata } : {}),
         },
       },
     });
     if (error) throw error;
+    if (data.session) {
+      set({ session: data.session });
+    }
+    return { userId: data.user?.id, hasSession: !!data.session };
   },
 
   sendOtp: async ({ email, phone, shouldCreateUser, fullName, role, plumberPhone, regions, bio, businessName, servicesType, gasSafeNumber, consentToChecks, rightToWork }) => {

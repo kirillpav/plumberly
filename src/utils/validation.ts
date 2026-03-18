@@ -20,6 +20,20 @@ export function isValidPostcode(value: string): boolean {
   return /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i.test(value.trim());
 }
 
+export function isValidCompanyNumber(value: string): boolean {
+  const trimmed = value.trim();
+  return /^\d{8}$/.test(trimmed) || /^[A-Za-z]{2}\d{6}$/.test(trimmed);
+}
+
+export function isValidUrl(value: string): boolean {
+  return /^https?:\/\/.+\..+/.test(value.trim());
+}
+
+export function isPositiveNumber(value: string): boolean {
+  const num = parseFloat(value);
+  return !isNaN(num) && num > 0;
+}
+
 export function validateField(
   value: string,
   rules: { required?: boolean; email?: boolean; phone?: boolean; minLength?: number }
