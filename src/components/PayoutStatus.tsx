@@ -119,10 +119,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.base,
   },
   successContainer: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: Colors.successBg,
   },
   errorContainer: {
-    backgroundColor: '#FEECEB',
+    backgroundColor: Colors.errorBg,
   },
   row: {
     flexDirection: 'row',

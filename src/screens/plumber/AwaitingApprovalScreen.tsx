@@ -134,10 +134,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   iconWrapError: {
-    backgroundColor: '#FDECEA',
+    backgroundColor: Colors.errorBgAlt2,
   },
   iconWrapSuccess: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: Colors.successBg,
   },
   title: {
     ...Typography.h1,

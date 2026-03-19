@@ -7,7 +7,7 @@ import { InputField } from '@/components/shared/InputField';
 import { PrimaryButton } from '@/components/shared/PrimaryButton';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { validateField } from '@/utils/validation';
 import type { AuthStackParamList } from '@/types/navigation';
@@ -16,25 +16,24 @@ type Nav = NativeStackNavigationProp<AuthStackParamList>;
 
 export function PlumberSignInScreen() {
   const nav = useNavigation<Nav>();
-  const sendOtp = useAuthStore((s) => s.sendOtp);
+  const signInPlumber = useAuthStore((s) => s.signInPlumber);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | undefined>();
+  const [errors, setErrors] = useState<Record<string, string | undefined>>({});
 
-  const handleSendCode = async () => {
-    const validationErr = validateField(email, { required: true, email: true });
-    if (validationErr) {
-      setError(validationErr);
+  const handleSignIn = async () => {
+    const e: Record<string, string | undefined> = {};
+    e.email = validateField(email, { required: true, email: true }) ?? undefined;
+    e.password = validateField(password, { required: true }) ?? undefined;
+    if (Object.values(e).some(Boolean)) {
+      setErrors(e);
       return;
     }
-    setError(undefined);
+    setErrors({});
     setLoading(true);
     try {
-      await sendOtp({
-        email: email.trim(),
-        shouldCreateUser: false,
-      });
-      nav.navigate('OtpVerification', { email: email.trim() });
+      await signInPlumber(email.trim(), password);
     } catch (err: any) {
       Alert.alert('Sign In Failed', err.message);
     } finally {
@@ -60,14 +59,23 @@ export function PlumberSignInScreen() {
             label="Email"
             value={email}
             onChangeText={setEmail}
-            error={error}
+            error={errors.email}
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
             placeholder="you@example.com"
           />
 
-          <PrimaryButton title="Send Code" onPress={handleSendCode} loading={loading} />
+          <InputField
+            label="Password"
+            value={password}
+            onChangeText={setPassword}
+            error={errors.password}
+            secureTextEntry
+            placeholder="Your password"
+          />
+
+          <PrimaryButton title="Sign In" onPress={handleSignIn} loading={loading} />
 
           <TouchableOpacity
             style={styles.link}
@@ -100,6 +108,6 @@ const styles = StyleSheet.create({
   },
   linkBold: {
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
 });

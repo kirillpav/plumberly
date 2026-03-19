@@ -16,7 +16,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { PlumberCard, PlumberListItem } from '@/components/PlumberCard';
 import { supabase } from '@/lib/supabase';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { Config } from '@/constants/config';
 
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     color: Colors.white,
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
   },
   searchRow: {
     marginBottom: Spacing.md,
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
   filterLabel: {
     ...Typography.caption,
     color: Colors.grey500,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: Spacing.sm,
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.white,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.grey100,
   },
   chipActive: {
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.full,
     backgroundColor: Colors.white,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.primary,
   },
   availableChipActive: {
@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
   },
   sortChipTextActive: {
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   clearBtn: {
     flexDirection: 'row',

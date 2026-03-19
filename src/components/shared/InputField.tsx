@@ -5,6 +5,7 @@ import {
   TextInput,
   StyleSheet,
   TextInputProps,
+  LayoutAnimation,
 } from 'react-native';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -18,6 +19,16 @@ interface Props extends TextInputProps {
 export function InputField({ label, error, style, ...props }: Props) {
   const [focused, setFocused] = useState(false);
 
+  const handleFocus = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setFocused(true);
+  };
+
+  const handleBlur = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setFocused(false);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
@@ -29,8 +40,8 @@ export function InputField({ label, error, style, ...props }: Props) {
           style,
         ]}
         placeholderTextColor={Colors.grey500}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         {...props}
       />
       {error ? <Text style={styles.errorText}>{error}</Text> : null}

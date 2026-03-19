@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { issueTypeToDisplayName, issueTypeToIcon } from '@/utils/intakeHelpers';
 import type { IntakeIssueType } from '@/types/index';
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...Typography.bodySmall,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
     color: Colors.grey700,
     textAlign: 'center',
   },

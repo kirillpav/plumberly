@@ -14,7 +14,7 @@ import { useEnquiryStore } from '@/store/enquiryStore';
 import { useAuthStore } from '@/store/authStore';
 import { useUnreadCounts } from '@/hooks/useUnreadCounts';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import type { PlumberStackParamList } from '@/types/navigation';
 import type { Job, Enquiry } from '@/types/index';
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     ...Typography.label,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
     flex: 1,
   },
   sectionTitleInArea: {
@@ -270,6 +270,6 @@ const styles = StyleSheet.create({
   sectionBadgeText: {
     ...Typography.caption,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
 });

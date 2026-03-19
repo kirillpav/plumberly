@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Image, Text, StyleSheet } from 'react-native';
 import { Colors } from '@/constants/colors';
+import { FontWeight } from '@/constants/typography';
 
 type Size = 'sm' | 'md' | 'lg';
 
@@ -57,7 +58,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   initials: {
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
     color: Colors.primary,
   },
 });

@@ -15,6 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
+import { DisclaimerBanner } from '@/components/shared/DisclaimerBanner';
 import { ChatBubble } from '@/components/ChatBubble';
 import { TypingIndicator } from '@/components/TypingIndicator';
 import { PrimaryButton } from '@/components/shared/PrimaryButton';
@@ -23,7 +24,7 @@ import { DynamicFields, validateDynamicFields } from '@/components/intake/Dynami
 import { IntakeSummary } from '@/components/intake/IntakeSummary';
 import { useChatStore } from '@/store/chatStore';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { Config } from '@/constants/config';
 import type { CustomerStackParamList } from '@/types/navigation';
@@ -149,6 +150,7 @@ export function ChatbotScreen() {
 
     return (
       <ScreenWrapper noPadding style={{ backgroundColor: Colors.white }}>
+        <DisclaimerBanner />
         <View style={styles.intakeHeader}>
           {intakeStep > 1 && (
             <TouchableOpacity onPress={handleIntakeBack} style={styles.intakeBackBtn} hitSlop={8}>
@@ -227,6 +229,7 @@ export function ChatbotScreen() {
   // ——— CHAT PHASE ———
   return (
     <ScreenWrapper noPadding style={{ backgroundColor: Colors.white }}>
+      <DisclaimerBanner />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}
@@ -352,7 +355,7 @@ const styles = StyleSheet.create({
   headerText: { flex: 1 },
   title: {
     ...Typography.label,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
     color: Colors.grey900,
   },
   subtitle: {
@@ -386,7 +389,7 @@ const styles = StyleSheet.create({
   },
   intakeTitle: {
     ...Typography.h2,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
     color: Colors.grey900,
     marginBottom: Spacing.sm,
   },
@@ -448,7 +451,7 @@ const styles = StyleSheet.create({
   emergencyText: { flex: 1 },
   emergencyTitle: {
     ...Typography.label,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
     color: Colors.white,
   },
   emergencySubtitle: {

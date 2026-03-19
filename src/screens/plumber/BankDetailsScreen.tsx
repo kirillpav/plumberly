@@ -14,7 +14,7 @@ import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
 import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/lib/supabase';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 
 const REDIRECT_BASE = 'fluxservice://plumber';
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     ...Typography.h3,
     color: Colors.black,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   row: {
     flexDirection: 'row',
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   },
   rowValueText: {
     ...Typography.body,
-    fontWeight: '500',
+    fontWeight: FontWeight.medium,
   },
   divider: {
     height: 1,
@@ -214,13 +214,13 @@ const styles = StyleSheet.create({
   },
   actionBtnOutline: {
     backgroundColor: Colors.white,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.primary,
   },
   actionText: {
     ...Typography.button,
     color: Colors.white,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   actionTextOutline: {
     color: Colors.primary,
@@ -235,6 +235,6 @@ const styles = StyleSheet.create({
   refreshText: {
     ...Typography.bodySmall,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
 });

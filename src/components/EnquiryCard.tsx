@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/colors";
-import { Typography } from "@/constants/typography";
+import { Typography, FontWeight } from "@/constants/typography";
 import { Spacing, BorderRadius } from "@/constants/spacing";
 import { formatDate } from "@/utils/formatDate";
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -243,18 +243,18 @@ const styles = StyleSheet.create({
   quoteBannerLabel: {
     ...Typography.label,
     color: Colors.primary,
-    fontWeight: "600",
+    fontWeight: FontWeight.semiBold,
   },
   quoteBannerAmount: {
     ...Typography.h3,
     color: Colors.primary,
-    fontWeight: "700",
+    fontWeight: FontWeight.bold,
   },
   pendingBanner: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.sm,
-    backgroundColor: "#FFF8EB",
+    backgroundColor: Colors.warningBg,
     marginHorizontal: -Spacing.base,
     marginTop: -Spacing.base,
     marginBottom: Spacing.md,
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   pendingBannerText: {
     ...Typography.caption,
     color: Colors.warning,
-    fontWeight: "600",
+    fontWeight: FontWeight.semiBold,
   },
   header: {
     flexDirection: "row",
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   unreadBadgeText: {
     ...Typography.caption,
     color: Colors.white,
-    fontWeight: "700",
+    fontWeight: FontWeight.bold,
   },
   reviewHint: {
     marginLeft: "auto",
@@ -349,6 +349,6 @@ const styles = StyleSheet.create({
   reviewHintText: {
     ...Typography.label,
     color: Colors.primary,
-    fontWeight: "600",
+    fontWeight: FontWeight.semiBold,
   },
 });

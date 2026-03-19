@@ -9,7 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { PrimaryButton } from "@/components/shared/PrimaryButton";
 import { useJobStore } from "@/store/jobStore";
 import { Colors } from "@/constants/colors";
-import { Typography } from "@/constants/typography";
+import { Typography, FontWeight } from "@/constants/typography";
 import { Spacing, BorderRadius } from "@/constants/spacing";
 
 interface PinEntryProps {
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.inputBorder,
     textAlign: "center",
     fontSize: 28,
-    fontWeight: "700",
+    fontWeight: FontWeight.bold,
     color: Colors.black,
   },
   digitInputError: {
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   verifiedText: {
     ...Typography.bodySmall,
     color: Colors.success,
-    fontWeight: "600",
+    fontWeight: FontWeight.semiBold,
     flex: 1,
   },
 });

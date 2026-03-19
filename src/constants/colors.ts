@@ -26,4 +26,9 @@ export const Colors = {
   regionSouth: 'rgba(255, 149, 0, 0.2)',
   regionWest: 'rgba(255, 59, 48, 0.2)',
   regionCentral: 'rgba(175, 82, 222, 0.2)',
+  successBg: '#E8F5E9',
+  errorBg: '#FEECEB',
+  warningBg: '#FFF8EB',
+  errorBgAlt: '#FFEBEE',
+  errorBgAlt2: '#FDECEA',
 } as const;

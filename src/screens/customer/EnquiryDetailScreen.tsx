@@ -27,7 +27,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { supabase } from "@/lib/supabase";
 import { Colors } from "@/constants/colors";
-import { Typography } from "@/constants/typography";
+import { Typography, FontWeight } from "@/constants/typography";
 import { Spacing, BorderRadius } from "@/constants/spacing";
 import { formatDate } from "@/utils/formatDate";
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
   detailChipText: {
     ...Typography.caption,
     color: Colors.primary,
-    fontWeight: "500",
+    fontWeight: FontWeight.medium,
   },
   section: { marginTop: Spacing.xl },
   sectionTitle: {
@@ -756,7 +756,7 @@ const styles = StyleSheet.create({
   acceptedBadgeText: {
     ...Typography.caption,
     color: Colors.white,
-    fontWeight: "700",
+    fontWeight: FontWeight.bold,
   },
   plumberCardRow: {
     flexDirection: "row",
@@ -769,7 +769,7 @@ const styles = StyleSheet.create({
   quoteAmountAccepted: {
     ...Typography.h3,
     color: Colors.success,
-    fontWeight: "700",
+    fontWeight: FontWeight.bold,
     marginTop: 2,
   },
   quoteCard: {
@@ -789,7 +789,7 @@ const styles = StyleSheet.create({
   quoteCardPrice: {
     ...Typography.h2,
     color: Colors.primary,
-    fontWeight: "700",
+    fontWeight: FontWeight.bold,
   },
   quoteDescriptionBox: {
     backgroundColor: Colors.background,
@@ -815,7 +815,7 @@ const styles = StyleSheet.create({
   },
   quoteTimeTextInline: { ...Typography.caption, color: Colors.primary },
   proposedBadge: {
-    backgroundColor: "#FFF8EB",
+    backgroundColor: Colors.warningBg,
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: BorderRadius.full,
@@ -824,13 +824,13 @@ const styles = StyleSheet.create({
   proposedBadgeText: {
     ...Typography.caption,
     color: Colors.warning,
-    fontWeight: "600",
+    fontWeight: FontWeight.semiBold,
     fontSize: 10,
   },
   quoteButtons: { flexDirection: "row", gap: Spacing.md },
   quoteButtonWrap: { flex: 1 },
   pendingBanner: {
-    backgroundColor: "#FFF8EB",
+    backgroundColor: Colors.warningBg,
     padding: Spacing.md,
     borderRadius: BorderRadius.card,
     flexDirection: "row",
@@ -840,11 +840,11 @@ const styles = StyleSheet.create({
   pendingText: {
     ...Typography.bodySmall,
     color: Colors.warning,
-    fontWeight: "600",
+    fontWeight: FontWeight.semiBold,
     flex: 1,
   },
   declinedBanner: {
-    backgroundColor: "#FEECEB",
+    backgroundColor: Colors.errorBg,
     padding: Spacing.md,
     borderRadius: BorderRadius.card,
     flexDirection: "row",
@@ -913,7 +913,7 @@ const styles = StyleSheet.create({
   messageCardTitle: {
     ...Typography.label,
     color: Colors.black,
-    fontWeight: "600",
+    fontWeight: FontWeight.semiBold,
   },
   messageCardSub: {
     ...Typography.caption,
@@ -932,10 +932,10 @@ const styles = StyleSheet.create({
   unreadDotText: {
     ...Typography.caption,
     color: Colors.white,
-    fontWeight: "700",
+    fontWeight: FontWeight.bold,
   },
   thankYouBanner: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: Colors.successBg,
     padding: Spacing.md,
     borderRadius: BorderRadius.card,
     flexDirection: "row",
@@ -943,6 +943,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     marginTop: Spacing.md,
   },
-  thankYouText: { ...Typography.bodySmall, color: Colors.success, fontWeight: "600", flex: 1 },
+  thankYouText: { ...Typography.bodySmall, color: Colors.success, fontWeight: FontWeight.semiBold, flex: 1 },
   spacer: { height: Spacing.xxl },
 });

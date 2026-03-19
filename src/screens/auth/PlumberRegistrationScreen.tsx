@@ -17,7 +17,7 @@ import { PrimaryButton } from '@/components/shared/PrimaryButton';
 import { DocumentPickerButton } from '@/components/shared/DocumentPickerButton';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import {
   isValidEmail,
@@ -1156,7 +1156,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.card,
     padding: Spacing.base,
     marginBottom: Spacing.base,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: Colors.grey100,
   },
   readOnlyLabel: {
@@ -1203,7 +1203,7 @@ const styles = StyleSheet.create({
   checkmark: {
     color: Colors.white,
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
   },
   checkboxLabel: {
     ...Typography.bodySmall,

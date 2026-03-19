@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Avatar } from './shared/Avatar';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { Config } from '@/constants/config';
 
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   name: {
     ...Typography.label,
     color: Colors.black,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
     flexShrink: 1,
   },
   ratingRow: {
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   ratingText: {
     ...Typography.caption,
     color: Colors.grey700,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
     marginLeft: 2,
   },
   dot: {
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   rateAmount: {
     ...Typography.h3,
     color: Colors.primary,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
   },
   rateUnit: {
     ...Typography.caption,

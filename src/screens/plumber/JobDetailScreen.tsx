@@ -24,7 +24,7 @@ import { useJobStore } from "@/store/jobStore";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { supabase } from "@/lib/supabase";
 import { Colors } from "@/constants/colors";
-import { Typography } from "@/constants/typography";
+import { Typography, FontWeight } from "@/constants/typography";
 import { Spacing, BorderRadius } from "@/constants/spacing";
 import { formatDate } from "@/utils/formatDate";
 import { formatCurrency } from "@/utils/formatCurrency";
@@ -691,7 +691,7 @@ export function JobDetailScreen() {
         )}
         {job.status === "deposit_paid" && (
           <>
-            <View style={[styles.waitingBanner, { backgroundColor: '#E8F5E9' }]}>
+            <View style={[styles.waitingBanner, { backgroundColor: Colors.successBg }]}>
               <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
               <Text style={[styles.waitingText, { color: Colors.success }]}>
                 Deposit confirmed — ready to start
@@ -1002,7 +1002,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#FEECEB",
+    backgroundColor: Colors.errorBg,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1012,7 +1012,7 @@ const styles = StyleSheet.create({
   declinedTitle: {
     ...Typography.label,
     color: Colors.error,
-    fontWeight: "700",
+    fontWeight: FontWeight.bold,
   },
   declinedSubtitle: {
     ...Typography.caption,
@@ -1057,7 +1057,7 @@ const styles = StyleSheet.create({
   notSelectedTitle: {
     ...Typography.label,
     color: Colors.grey700,
-    fontWeight: "700",
+    fontWeight: FontWeight.bold,
   },
   notSelectedSubtitle: {
     ...Typography.caption,
@@ -1094,7 +1094,7 @@ const styles = StyleSheet.create({
   messageCardTitle: {
     ...Typography.label,
     color: Colors.black,
-    fontWeight: "600",
+    fontWeight: FontWeight.semiBold,
   },
   messageCardSub: {
     ...Typography.caption,
@@ -1113,7 +1113,7 @@ const styles = StyleSheet.create({
   unreadDotText: {
     ...Typography.caption,
     color: Colors.white,
-    fontWeight: "700",
+    fontWeight: FontWeight.bold,
   },
   calendar: {
     borderRadius: BorderRadius.card,

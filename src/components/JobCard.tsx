@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { formatDate } from '@/utils/formatDate';
 import { formatCurrency } from '@/utils/formatCurrency';
@@ -158,13 +158,13 @@ const styles = StyleSheet.create({
   notSelectedBannerText: {
     ...Typography.caption,
     color: Colors.grey500,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   declinedBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: '#FEECEB',
+    backgroundColor: Colors.errorBg,
     marginHorizontal: -Spacing.base,
     marginTop: -Spacing.base,
     marginBottom: Spacing.md,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   declinedBannerText: {
     ...Typography.caption,
     color: Colors.error,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   pendingBanner: {
     flexDirection: 'row',
@@ -194,13 +194,13 @@ const styles = StyleSheet.create({
   pendingBannerText: {
     ...Typography.caption,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   quotedBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: '#FFF8EB',
+    backgroundColor: Colors.warningBg,
     marginHorizontal: -Spacing.base,
     marginTop: -Spacing.base,
     marginBottom: Spacing.md,
@@ -212,13 +212,13 @@ const styles = StyleSheet.create({
   quotedBannerText: {
     ...Typography.caption,
     color: Colors.warning,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   acceptedBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: Colors.successBg,
     marginHorizontal: -Spacing.base,
     marginTop: -Spacing.base,
     marginBottom: Spacing.md,
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   acceptedBannerText: {
     ...Typography.caption,
     color: Colors.success,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   inProgressBanner: {
     flexDirection: 'row',
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   inProgressBannerText: {
     ...Typography.caption,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   row: {
     flexDirection: 'row',
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
   },
   pricePillDeclined: {
-    backgroundColor: '#FEECEB',
+    backgroundColor: Colors.errorBg,
   },
   priceText: {
     ...Typography.label,
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   requoteHintText: {
     ...Typography.label,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   footerRight: {
     flexDirection: 'row',
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   unreadBadgeText: {
     ...Typography.caption,
     color: Colors.white,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
   },
   actionBtn: {
     backgroundColor: Colors.primary,

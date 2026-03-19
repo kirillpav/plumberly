@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 
 interface Props {
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
   countText: {
     ...Typography.label,
     color: Colors.white,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
     fontSize: 16,
   },
   statusLabel: {
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   },
   statusLabelDone: {
     color: Colors.success,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   parties: {
     width: '100%',
@@ -179,6 +179,6 @@ const styles = StyleSheet.create({
   },
   partyStatusConfirmed: {
     color: Colors.success,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
 });

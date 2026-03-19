@@ -21,7 +21,7 @@ import { useJobStore } from '@/store/jobStore';
 import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/lib/supabase';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { formatDate } from '@/utils/formatDate';
 import type { PlumberStackParamList } from '@/types/navigation';
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   quoteHeaderText: {
     ...Typography.label,
     color: Colors.success,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
     flex: 1,
   },
   timePickerSection: {

@@ -15,7 +15,7 @@ import { useJobStore } from '@/store/jobStore';
 import { useReviewStore } from '@/store/reviewStore';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { StarRating } from '@/components/StarRating';
 import { ReviewCard } from '@/components/ReviewCard';
@@ -241,7 +241,7 @@ export function DashboardScreen() {
           <View style={styles.revenueRow}>
             <Text style={styles.revenue}>{formatCurrencyWhole(currentRevenue)}</Text>
             {(currentRevenue > 0 || previousRevenue > 0) && (
-              <View style={[styles.changeBadge, { backgroundColor: changePositive ? '#E8F5E9' : '#FFEBEE' }]}>
+              <View style={[styles.changeBadge, { backgroundColor: changePositive ? Colors.successBg : Colors.errorBgAlt }]}>
                 <Ionicons
                   name={changePositive ? 'arrow-up' : 'arrow-down'}
                   size={12}
@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     gap: 2,
   },
-  changeText: { ...Typography.caption, fontWeight: '600' },
+  changeText: { ...Typography.caption, fontWeight: FontWeight.semiBold },
   chartContainer: { marginTop: Spacing.sm, marginLeft: -Spacing.sm },
   xAxisLabel: { color: Colors.grey500, fontSize: 11 },
   yAxisLabel: { color: Colors.grey500, fontSize: 10 },
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   timeSlotText: {
     ...Typography.label,
     color: Colors.primary,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
   },
   timelineRow: {
     flexDirection: 'row',
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 2,
   },
-  scheduleCustomer: { ...Typography.body, color: Colors.black, fontWeight: '600', flex: 1 },
+  scheduleCustomer: { ...Typography.body, color: Colors.black, fontWeight: FontWeight.semiBold, flex: 1 },
   scheduleJob: { ...Typography.caption, color: Colors.grey500, marginTop: 2 },
   statusBadge: {
     paddingHorizontal: Spacing.sm,
@@ -476,7 +476,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.full,
     marginLeft: Spacing.sm,
   },
-  statusText: { ...Typography.caption, fontWeight: '600' },
+  statusText: { ...Typography.caption, fontWeight: FontWeight.semiBold },
   scheduleIndicators: {
     flexDirection: 'row',
     gap: Spacing.md,
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.xs,
   },
-  indicatorCount: { fontWeight: '700', color: Colors.black },
+  indicatorCount: { fontWeight: FontWeight.bold, color: Colors.black },
   indicatorText: { ...Typography.bodySmall, color: Colors.grey500 },
   // Reviews
   ratingOverview: {

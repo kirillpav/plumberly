@@ -15,7 +15,7 @@ import { InputField } from "@/components/shared/InputField";
 import { PrimaryButton } from "@/components/shared/PrimaryButton";
 import { useAuthStore } from "@/store/authStore";
 import { Colors } from "@/constants/colors";
-import { Typography } from "@/constants/typography";
+import { Typography, FontWeight } from "@/constants/typography";
 import { Spacing, BorderRadius } from "@/constants/spacing";
 import { validateField } from "@/utils/validation";
 import type { AuthStackParamList } from "@/types/navigation";
@@ -156,6 +156,6 @@ const styles = StyleSheet.create({
   googleButtonText: {
     ...Typography.body,
     color: Colors.grey700,
-    fontWeight: "600",
+    fontWeight: FontWeight.semiBold,
   },
 });

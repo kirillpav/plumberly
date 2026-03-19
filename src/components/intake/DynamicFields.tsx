@@ -4,7 +4,7 @@ import { InputField } from '@/components/shared/InputField';
 import { ImagePickerButton } from '@/components/ImagePickerButton';
 import { Config } from '@/constants/config';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import type { IntakeIssueType, IntakeFieldDefinition } from '@/types/index';
 
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     ...Typography.label,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
     color: Colors.grey700,
     marginBottom: Spacing.xs,
   },

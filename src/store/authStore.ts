@@ -31,26 +31,7 @@ interface AuthState {
     businessType?: 'sole_trader' | 'limited_company';
     vettingMetadata?: Record<string, unknown>;
   }) => Promise<{ userId: string | undefined; hasSession: boolean }>;
-  sendOtp: (params: {
-    email?: string;
-    phone?: string;
-    shouldCreateUser: boolean;
-    fullName?: string;
-    role?: UserRole;
-    plumberPhone?: string;
-    regions?: string[];
-    bio?: string;
-    businessName?: string;
-    servicesType?: ServicesType;
-    gasSafeNumber?: string;
-    consentToChecks?: boolean;
-    rightToWork?: string;
-  }) => Promise<void>;
-  verifyOtp: (params: {
-    email?: string;
-    phone?: string;
-    token: string;
-  }) => Promise<void>;
+  signInPlumber: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
@@ -59,6 +40,10 @@ interface AuthState {
 async function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+// When true, onAuthStateChange skips setting session so role-checked
+// sign-in methods can validate the role before navigation fires.
+let _pendingRoleCheck = false;
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
@@ -80,6 +65,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (_pendingRoleCheck) return;
       set({ session });
       if (session?.user) {
         await get().fetchProfile(session.user.id);
@@ -158,8 +144,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signIn: async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+    _pendingRoleCheck = true;
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+
+      // Block plumber accounts from the main sign-in flow
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profile?.role === 'plumber') {
+          await supabase.auth.signOut();
+          throw new Error('Plumber accounts must sign in through the Plumber Portal.');
+        }
+      }
+
+      // Role check passed — propagate session
+      set({ session: data.session });
+      if (data.session?.user) {
+        await get().fetchProfile(data.session.user.id);
+      }
+    } finally {
+      _pendingRoleCheck = false;
+    }
   },
 
   signUp: async ({ email, password, fullName, role, phone, regions, bio, businessName, servicesType, gasSafeNumber, consentToChecks, rightToWork, businessType, vettingMetadata }) => {
@@ -190,35 +201,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return { userId: data.user?.id, hasSession: !!data.session };
   },
 
-  sendOtp: async ({ email, phone, shouldCreateUser, fullName, role, plumberPhone, regions, bio, businessName, servicesType, gasSafeNumber, consentToChecks, rightToWork }) => {
-    const options: { shouldCreateUser: boolean; data?: Record<string, unknown> } = { shouldCreateUser };
-    if (shouldCreateUser && fullName) {
-      options.data = {
-        full_name: fullName,
-        role: role ?? 'customer',
-        ...(plumberPhone ? { phone: plumberPhone } : {}),
-        ...(regions ? { regions } : {}),
-        ...(bio ? { bio } : {}),
-        ...(businessName ? { business_name: businessName } : {}),
-        ...(servicesType ? { services_type: servicesType } : {}),
-        ...(gasSafeNumber ? { gas_safe_number: gasSafeNumber } : {}),
-        ...(consentToChecks !== undefined ? { consent_to_checks: consentToChecks } : {}),
-        ...(rightToWork ? { right_to_work: rightToWork } : {}),
-      };
-    }
-    const params = email
-      ? { email, options }
-      : { phone: phone!, options };
-    const { error } = await supabase.auth.signInWithOtp(params);
-    if (error) throw error;
-  },
+  signInPlumber: async (email, password) => {
+    _pendingRoleCheck = true;
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
 
-  verifyOtp: async ({ email, phone, token }) => {
-    const params = email
-      ? { email, token, type: 'email' as const }
-      : { phone: phone!, token, type: 'sms' as const };
-    const { error } = await supabase.auth.verifyOtp(params);
-    if (error) throw error;
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profile?.role !== 'plumber') {
+          await supabase.auth.signOut();
+          throw new Error('This portal is for plumber accounts only. Please use the main sign-in.');
+        }
+      }
+
+      // Role check passed — propagate session
+      set({ session: data.session });
+      if (data.session?.user) {
+        await get().fetchProfile(data.session.user.id);
+      }
+    } finally {
+      _pendingRoleCheck = false;
+    }
   },
 
   signInWithGoogle: async () => {
@@ -249,11 +258,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       throw new Error('Missing tokens in redirect');
     }
 
-    const { error: sessionError } = await supabase.auth.setSession({
-      access_token,
-      refresh_token,
-    });
-    if (sessionError) throw sessionError;
+    _pendingRoleCheck = true;
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      });
+      if (sessionError) throw sessionError;
+
+      // Block plumber accounts from Google sign-in on the main flow
+      if (sessionData.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', sessionData.user.id)
+          .single();
+
+        if (profile?.role === 'plumber') {
+          await supabase.auth.signOut();
+          throw new Error('Plumber accounts must sign in through the Plumber Portal.');
+        }
+      }
+
+      // Role check passed — propagate session
+      set({ session: sessionData.session });
+      if (sessionData.session?.user) {
+        await get().fetchProfile(sessionData.session.user.id);
+      }
+    } finally {
+      _pendingRoleCheck = false;
+    }
   },
 
   signOut: async () => {

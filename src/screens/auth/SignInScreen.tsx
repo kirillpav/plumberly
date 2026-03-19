@@ -7,7 +7,7 @@ import { InputField } from '@/components/shared/InputField';
 import { PrimaryButton } from '@/components/shared/PrimaryButton';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { validateField } from '@/utils/validation';
 import type { AuthStackParamList } from '@/types/navigation';
@@ -116,7 +116,7 @@ export function SignInScreen() {
 
           <TouchableOpacity
             style={styles.plumberButton}
-            onPress={() => nav.navigate('PlumberRegistration' as any)}
+            onPress={() => nav.navigate('PlumberSignIn')}
           >
             <Text style={styles.plumberButtonTitle}>Plumber Portal</Text>
             <Text style={styles.plumberButtonSub}>Sign in or register as a tradesperson</Text>
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   googleButtonText: {
     ...Typography.body,
     color: Colors.grey700,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   toggleLink: {
     alignItems: 'center',
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   },
   toggleBold: {
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   divider: {
     flexDirection: 'row',
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   plumberButtonTitle: {
     ...Typography.body,
     color: Colors.primary,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
   },
   plumberButtonSub: {
     ...Typography.bodySmall,

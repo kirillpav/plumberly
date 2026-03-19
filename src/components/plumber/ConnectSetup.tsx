@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 
 const REDIRECT_BASE = 'fluxservice://plumber';
@@ -169,12 +169,12 @@ const styles = StyleSheet.create({
   enabledText: {
     ...Typography.body,
     color: Colors.success,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   title: {
     ...Typography.h3,
     color: Colors.black,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   subtitle: {
     ...Typography.bodySmall,
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   ctaText: {
     ...Typography.button,
     color: Colors.white,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
   refreshBtn: {
     flexDirection: 'row',
@@ -210,6 +210,6 @@ const styles = StyleSheet.create({
   refreshText: {
     ...Typography.bodySmall,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
   },
 });

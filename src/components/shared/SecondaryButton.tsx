@@ -1,5 +1,6 @@
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle } from 'react-native';
+import React, { useCallback } from 'react';
+import { Pressable, Text, StyleSheet, ViewStyle } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { BorderRadius } from '@/constants/spacing';
@@ -11,16 +12,33 @@ interface Props {
   style?: ViewStyle;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export function SecondaryButton({ title, onPress, disabled, style }: Props) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePressIn = useCallback(() => {
+    scale.value = withTiming(0.98, { duration: 80 });
+  }, []);
+
+  const handlePressOut = useCallback(() => {
+    scale.value = withTiming(1, { duration: 80 });
+  }, []);
+
   return (
-    <TouchableOpacity
-      style={[styles.button, disabled && styles.disabled, style]}
+    <AnimatedPressable
+      style={[styles.button, disabled && styles.disabled, style, animatedStyle]}
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       disabled={disabled}
-      activeOpacity={0.8}
     >
       <Text style={styles.text}>{title}</Text>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }
 

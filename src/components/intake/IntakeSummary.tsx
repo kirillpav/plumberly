@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
-import { Typography } from '@/constants/typography';
+import { Typography, FontWeight } from '@/constants/typography';
 import { Spacing, BorderRadius } from '@/constants/spacing';
 import { issueTypeToDisplayName, issueTypeToIcon } from '@/utils/intakeHelpers';
 import { Config } from '@/constants/config';
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...Typography.h3,
-    fontWeight: '700',
+    fontWeight: FontWeight.bold,
     color: Colors.grey900,
     flex: 1,
   },
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
   },
   editText: {
     ...Typography.label,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
     color: Colors.primary,
   },
   divider: {
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   },
   value: {
     ...Typography.bodySmall,
-    fontWeight: '600',
+    fontWeight: FontWeight.semiBold,
     color: Colors.grey900,
     flex: 1,
     textAlign: 'right',
