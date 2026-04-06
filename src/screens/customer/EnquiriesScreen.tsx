@@ -22,7 +22,8 @@ import { Colors } from "@/constants/colors";
 import { Spacing } from "@/constants/spacing";
 import { Typography } from "@/constants/typography";
 import type { CustomerStackParamList } from "@/types/navigation";
-import type { EnquiryStatus, Enquiry } from "@/types/index";
+import { ACTIVE_JOB_STATUSES } from "@/types/index";
+import type { EnquiryStatus, Enquiry, JobStatus } from "@/types/index";
 
 type Nav = NativeStackNavigationProp<CustomerStackParamList>;
 const SEGMENTS = ["New", "Active", "Completed"];
@@ -31,7 +32,7 @@ const ACTIVE_STATUSES: EnquiryStatus[] = ["accepted", "in_progress"];
 interface JobInfo {
   job_id: string;
   enquiry_id: string;
-  status: string;
+  status: JobStatus;
   quote_amount: number | null;
   plumber_name: string | null;
 }
@@ -159,7 +160,7 @@ export function EnquiriesScreen() {
       const quotedJobs = jobs.filter((j) => j.status === "quoted");
       const pendingJobs = jobs.filter((j) => j.status === "pending");
       const activeJob = jobs.find((j) =>
-        ["accepted", "deposit_paid", "in_progress", "completed"].includes(j.status),
+        ACTIVE_JOB_STATUSES.includes(j.status),
       );
 
       // Compute total unread count across all jobs for this enquiry

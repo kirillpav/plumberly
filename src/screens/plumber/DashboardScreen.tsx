@@ -21,6 +21,7 @@ import { StarRating } from '@/components/StarRating';
 import { ReviewCard } from '@/components/ReviewCard';
 import { formatCurrencyWhole } from '@/utils/formatCurrency';
 import type { PlumberStackParamList } from '@/types/navigation';
+import { ACTIVE_JOB_STATUSES } from '@/types/index';
 import type { Job } from '@/types/index';
 
 type Nav = NativeStackNavigationProp<PlumberStackParamList>;
@@ -175,10 +176,9 @@ export function DashboardScreen() {
   // Group jobs by their time slot for calendar-style display
   const scheduleGroups = useMemo(() => {
     const todayStr = format(new Date(), 'yyyy-MM-dd');
-    const acceptedStatuses = ['accepted', 'deposit_paid', 'in_progress', 'completed'];
     const todayJobs = jobs
       .filter((j) => {
-        if (!acceptedStatuses.includes(j.status)) return false;
+        if (!ACTIVE_JOB_STATUSES.includes(j.status)) return false;
         const jobDate = j.scheduled_date ?? j.enquiry?.preferred_date ?? null;
         return jobDate === todayStr;
       })
@@ -203,10 +203,9 @@ export function DashboardScreen() {
     const weekStart = startOfWeek(now, { weekStartsOn: 1 });
     const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
 
-    const acceptedStatuses = ['accepted', 'deposit_paid', 'in_progress', 'completed'];
     const getJobDate = (j: Job) => j.scheduled_date ?? j.enquiry?.preferred_date ?? null;
 
-    const scheduledJobs = jobs.filter((j) => acceptedStatuses.includes(j.status));
+    const scheduledJobs = jobs.filter((j) => ACTIVE_JOB_STATUSES.includes(j.status));
     const tomorrow = scheduledJobs.filter((j) => getJobDate(j) === tomorrowStr).length;
     const thisWeek = scheduledJobs.filter((j) => {
       const d = getJobDate(j);

@@ -33,6 +33,7 @@ import { formatDate } from "@/utils/formatDate";
 import { formatCurrency } from "@/utils/formatCurrency";
 import type { CustomerStackParamList } from "@/types/navigation";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { ACTIVE_JOB_STATUSES } from "@/types/index";
 import type { Enquiry, Job, ChatMessage } from "@/types/index";
 
 type JobWithPlumber = Job & {
@@ -138,7 +139,7 @@ export function EnquiryDetailScreen() {
 
   // Derive job categories
   const activeJob = allJobs.find(
-    (j) => ["accepted", "deposit_paid", "in_progress", "completed"].includes(j.status),
+    (j) => ACTIVE_JOB_STATUSES.includes(j.status),
   );
   const quotedJobs = allJobs.filter((j) => j.status === "quoted");
   const pendingJobs = allJobs.filter((j) => j.status === "pending");

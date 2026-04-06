@@ -67,6 +67,12 @@ export interface Enquiry {
 
 export type JobStatus = 'pending' | 'quoted' | 'declined' | 'accepted' | 'deposit_paid' | 'in_progress' | 'completed' | 'cancelled';
 
+/** Jobs that have been accepted/paid and are actively in progress or done. */
+export const ACTIVE_JOB_STATUSES: JobStatus[] = ['accepted', 'deposit_paid', 'in_progress', 'completed'];
+
+/** Jobs that occupy a schedule slot (quoted through in_progress). */
+export const SCHEDULED_JOB_STATUSES: JobStatus[] = ['quoted', 'accepted', 'deposit_paid', 'in_progress'];
+
 export interface Job {
   id: string;
   enquiry_id: string;

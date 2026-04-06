@@ -9,10 +9,6 @@ export const Config = {
     url: process.env.EXPO_PUBLIC_SUPABASE_URL ?? "",
     anonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "",
   },
-  openai: {
-    apiKey: process.env.EXPO_PUBLIC_OPENAI_API_KEY ?? "",
-    model: "gpt-4o",
-  },
   googleMaps: {
     apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
   },

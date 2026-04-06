@@ -22,7 +22,7 @@ There is no linter, formatter, or test runner configured.
 - **State:** Zustand stores (src/store/) — auth, enquiry, job, chat
 - **Backend:** Supabase (Postgres + Auth + Storage) — schema in `supabase/schema.sql`
 - **Navigation:** React Navigation (native-stack + bottom-tabs)
-- **AI:** OpenAI GPT-4o streaming via AsyncGenerator (src/lib/openai.ts)
+- **AI:** OpenAI GPT-4o via Supabase edge function (supabase/functions/chat-triage/)
 - **Maps:** react-native-maps + Google Maps API
 
 ### Two-Role Architecture
@@ -44,13 +44,12 @@ Navigation is defined in `src/navigation/` with `RootNavigator` checking auth st
 - `src/screens/auth/` — SignIn, CreateAccount, PlumberRegistration
 - `src/components/` — Shared UI components (ScreenWrapper, PrimaryButton, InputField, SegmentedControl, etc.)
 - `src/store/` — Zustand stores with real-time Supabase subscriptions
-- `src/lib/` — Supabase client, OpenAI streaming, storage upload helpers
+- `src/lib/` — Supabase client, edge function helpers, storage upload helpers
 - `src/constants/` — Design tokens: colors (primary #3B7EF6), typography (Inter font), spacing scale
 
 ### Environment Variables
 Required in `.env.local` with `EXPO_PUBLIC_` prefix:
 - `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-- `EXPO_PUBLIC_OPENAI_API_KEY`
 - `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`
 
 ### Conventions

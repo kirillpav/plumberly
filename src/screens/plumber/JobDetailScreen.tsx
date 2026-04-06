@@ -31,6 +31,7 @@ import { formatCurrency } from "@/utils/formatCurrency";
 import { addJobToCalendar } from "@/lib/calendarExport";
 import type { PlumberStackParamList } from "@/types/navigation";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { ACTIVE_JOB_STATUSES, SCHEDULED_JOB_STATUSES } from "@/types/index";
 import type { Job, Enquiry, UserProfile, ChatMessage } from "@/types/index";
 
 export function JobDetailScreen() {
@@ -116,7 +117,7 @@ export function JobDetailScreen() {
       (j) =>
         j.id !== job?.id &&
         j.scheduled_date === date &&
-        ["quoted", "accepted", "deposit_paid", "in_progress"].includes(j.status),
+        SCHEDULED_JOB_STATUSES.includes(j.status),
     );
 
   const handleSubmitQuote = async () => {
@@ -420,7 +421,7 @@ export function JobDetailScreen() {
           {enquiry?.region && (
             <Text style={styles.meta}>Region: {enquiry.region}</Text>
           )}
-          {['accepted', 'deposit_paid', 'in_progress', 'completed'].includes(job.status) && enquiry?.address_line_1 ? (
+          {ACTIVE_JOB_STATUSES.includes(job.status) && enquiry?.address_line_1 ? (
             <View style={styles.addressRow}>
               <Ionicons name="location-outline" size={16} color={Colors.primary} />
               <Text style={styles.addressText}>
@@ -429,7 +430,7 @@ export function JobDetailScreen() {
                   .join(', ')}
               </Text>
             </View>
-          ) : !['accepted', 'deposit_paid', 'in_progress', 'completed'].includes(job.status) ? (
+          ) : !ACTIVE_JOB_STATUSES.includes(job.status) ? (
             <View style={styles.addressLockedBanner}>
               <Ionicons name="lock-closed-outline" size={16} color={Colors.grey500} />
               <Text style={styles.addressLockedText}>

@@ -155,7 +155,7 @@ export const useJobStore = create<JobState>((set, get) => ({
       });
     }
 
-    await get().fetchJobs();
+    await get().fetchJobs(job?.plumber_id);
   },
 
   acceptQuote: async (jobId) => {
@@ -184,16 +184,19 @@ export const useJobStore = create<JobState>((set, get) => ({
     // The return is cosmetic — payment confirmation comes exclusively via webhook.
     await WebBrowser.openAuthSessionAsync(checkout_url, 'fluxservice://payment');
 
-    await get().fetchJobs();
+    // Re-fetch scoped to the current job's context
+    const acceptedJob = get().jobs.find((j) => j.id === jobId);
+    await get().fetchJobs(acceptedJob?.plumber_id);
   },
 
   updateJobStatus: async (jobId, status) => {
+    const updatedJob = get().jobs.find((j) => j.id === jobId);
     const { error } = await supabase
       .from('jobs')
       .update({ status })
       .eq('id', jobId);
     if (error) throw error;
-    await get().fetchJobs();
+    await get().fetchJobs(updatedJob?.plumber_id);
   },
 
   getJobPin: async (jobId) => {
