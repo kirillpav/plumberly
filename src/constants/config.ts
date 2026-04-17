@@ -9,15 +9,6 @@ export const Config = {
     url: process.env.EXPO_PUBLIC_SUPABASE_URL ?? "",
     anonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "",
   },
-  googleMaps: {
-    apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
-  },
-  defaultMapRegion: {
-    latitude: 51.5074,
-    longitude: -0.1278,
-    latitudeDelta: 0.15,
-    longitudeDelta: 0.15,
-  },
   chatbot: {
     minExchangesForCTA: 2,
     maxConversationHistory: 2,

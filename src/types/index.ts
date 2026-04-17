@@ -171,8 +171,4 @@ export interface PayoutTransfer {
   created_at: string;
 }
 
-export interface Region {
-  name: string;
-  coordinates: Array<{ latitude: number; longitude: number }>;
-  color: string;
-}
+

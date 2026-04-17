@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '@/components/shared/ScreenWrapper';
@@ -63,7 +64,8 @@ export function FindProsScreen() {
 
       setPlumbers((data as unknown as PlumberListItem[]) ?? []);
     } catch (err) {
-      console.error('Failed to fetch plumbers:', err);
+      if (__DEV__) console.error('Failed to fetch plumbers:', err);
+      Alert.alert('Error', 'Could not load professionals. Pull to refresh.');
     }
   }, []);
 

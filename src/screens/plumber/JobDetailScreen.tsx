@@ -63,29 +63,37 @@ export function JobDetailScreen() {
   );
 
   const loadData = async () => {
-    const { data: j } = await supabase
-      .from("jobs")
-      .select("*")
-      .eq("id", jobId)
-      .single();
+    try {
+      const { data: j, error: jobError } = await supabase
+        .from("jobs")
+        .select("*")
+        .eq("id", jobId)
+        .single();
 
-    if (j) {
-      setJob(j as unknown as Job);
+      if (jobError || !j) {
+        Alert.alert("Error", "Could not load job details.");
+        return;
+      }
+
+      setJob(j as Job);
       const { data: enq } = await supabase
         .from("enquiries")
         .select("*")
         .eq("id", j.enquiry_id)
         .single();
-      setEnquiry(enq as unknown as Enquiry);
+      setEnquiry((enq as Enquiry) ?? null);
 
       const { data: cust } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", j.customer_id)
         .single();
-      setCustomer(cust as unknown as UserProfile);
+      setCustomer((cust as UserProfile) ?? null);
+    } catch {
+      Alert.alert("Error", "Something went wrong loading job details.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
