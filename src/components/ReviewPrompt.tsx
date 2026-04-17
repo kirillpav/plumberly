@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert } from 'react-native';
 import { StarRating } from '@/components/StarRating';
 import { PrimaryButton } from '@/components/shared/PrimaryButton';
 import { SecondaryButton } from '@/components/shared/SecondaryButton';
@@ -30,8 +30,7 @@ export function ReviewPrompt({ jobId, customerId, plumberId, plumberName, onRevi
       await submitReview(jobId, customerId, plumberId, rating, comment.trim() || undefined);
       onReviewSubmitted();
     } catch {
-      // Fire-and-forget — still mark as submitted
-      onReviewSubmitted();
+      Alert.alert('Review Failed', 'Your review could not be submitted. Please try again later.');
     } finally {
       setSubmitting(false);
     }

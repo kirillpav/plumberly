@@ -130,7 +130,9 @@ export const useJobChatStore = create<JobChatState>((set, get) => ({
             .from('job_messages')
             .update({ read_at: new Date().toISOString() })
             .eq('id', newMsg.id)
-            .then();
+            .then(({ error }) => {
+              if (error && __DEV__) console.warn('Failed to mark message as read:', error.message);
+            });
         }
       })
       .on('postgres_changes', {

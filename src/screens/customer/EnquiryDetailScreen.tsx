@@ -66,34 +66,43 @@ export function EnquiryDetailScreen() {
   const { checkReviewExists } = useReviewStore();
 
   const loadData = async () => {
-    const { data: enq } = await supabase
-      .from("enquiries")
-      .select("*")
-      .eq("id", enquiryId)
-      .single();
-    setEnquiry(enq as unknown as Enquiry);
+    try {
+      const { data: enq, error: enqError } = await supabase
+        .from("enquiries")
+        .select("*")
+        .eq("id", enquiryId)
+        .single();
 
-    const { data: jobsData } = await supabase
-      .from("jobs")
-      .select("id, enquiry_id, customer_id, plumber_id, status, quote_amount, scheduled_date, scheduled_time, notes, quote_description, customer_confirmed, plumber_confirmed, pin_verified, created_at, updated_at, plumber:profiles!plumber_id(full_name, avatar_url)")
-      .eq("enquiry_id", enquiryId)
-      .order("created_at", { ascending: false });
+      if (enqError || !enq) {
+        Alert.alert("Error", "Could not load enquiry details.");
+        return;
+      }
+      setEnquiry(enq as Enquiry);
 
-    const jobs = (jobsData ?? []) as unknown as JobWithPlumber[];
-    setAllJobs(jobs);
+      const { data: jobsData } = await supabase
+        .from("jobs")
+        .select("id, enquiry_id, customer_id, plumber_id, status, quote_amount, scheduled_date, scheduled_time, notes, quote_description, customer_confirmed, plumber_confirmed, pin_verified, created_at, updated_at, plumber:profiles!plumber_id(full_name, avatar_url)")
+        .eq("enquiry_id", enquiryId)
+        .order("created_at", { ascending: false });
 
-    // Check review status for completed jobs
-    const completedJob = jobs.find((j) => j.status === "completed");
-    if (completedJob) {
-      const [exists, skippedFlag] = await Promise.all([
-        checkReviewExists(completedJob.id).catch(() => false),
-        AsyncStorage.getItem(`review_skipped_${completedJob.id}`),
-      ]);
-      setReviewExists(exists);
-      setReviewSkipped(skippedFlag === "true");
+      const jobs = (jobsData ?? []) as unknown as JobWithPlumber[];
+      setAllJobs(jobs);
+
+      // Check review status for completed jobs
+      const completedJob = jobs.find((j) => j.status === "completed");
+      if (completedJob) {
+        const [exists, skippedFlag] = await Promise.all([
+          checkReviewExists(completedJob.id).catch(() => false),
+          AsyncStorage.getItem(`review_skipped_${completedJob.id}`),
+        ]);
+        setReviewExists(exists);
+        setReviewSkipped(skippedFlag === "true");
+      }
+    } catch {
+      Alert.alert("Error", "Something went wrong loading enquiry details.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   useEffect(() => {

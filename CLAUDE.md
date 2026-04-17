@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-FluxService is a two-sided marketplace React Native (Expo) app connecting customers with plumbers in the UK. Customers interact with an AI chatbot for plumbing diagnosis, create enquiries, and browse plumbers on a map. Plumbers manage jobs, submit quotes, and track performance on a dashboard.
+FluxService is a two-sided marketplace React Native (Expo) app connecting customers with plumbers in the UK. Customers interact with an AI chatbot for plumbing diagnosis, create enquiries, and browse plumbers. Plumbers manage jobs, submit quotes, and track performance on a dashboard.
 
 ## Commands
 
@@ -23,11 +23,10 @@ There is no linter, formatter, or test runner configured.
 - **Backend:** Supabase (Postgres + Auth + Storage) — schema in `supabase/schema.sql`
 - **Navigation:** React Navigation (native-stack + bottom-tabs)
 - **AI:** OpenAI GPT-4o via Supabase edge function (supabase/functions/chat-triage/)
-- **Maps:** react-native-maps + Google Maps API
 
 ### Two-Role Architecture
 The app conditionally renders entirely different tab navigators based on `UserRole`:
-- **Customer flow:** Chatbot → Enquiries → Map → Account
+- **Customer flow:** Chatbot → Enquiries → Account
 - **Plumber flow:** Jobs → Dashboard → Account
 
 Navigation is defined in `src/navigation/` with `RootNavigator` checking auth state and role to choose between `AuthNavigator`, `CustomerTabNavigator`, or `PlumberTabNavigator`.
@@ -39,7 +38,7 @@ Navigation is defined in `src/navigation/` with `RootNavigator` checking auth st
 4. **Real-time:** Stores subscribe to Supabase Postgres changes for live updates.
 
 ### Key Directories
-- `src/screens/customer/` — 7 customer screens (Chatbot, Enquiries, NewEnquiry, EnquiryDetail, Map, Account, EditProfile)
+- `src/screens/customer/` — 6 customer screens (Chatbot, Enquiries, NewEnquiry, EnquiryDetail, Account, EditProfile)
 - `src/screens/plumber/` — 6 plumber screens (Jobs, JobDetail, Dashboard, Account, EditProfile, BankDetails)
 - `src/screens/auth/` — SignIn, CreateAccount, PlumberRegistration
 - `src/components/` — Shared UI components (ScreenWrapper, PrimaryButton, InputField, SegmentedControl, etc.)
@@ -50,7 +49,6 @@ Navigation is defined in `src/navigation/` with `RootNavigator` checking auth st
 ### Environment Variables
 Required in `.env.local` with `EXPO_PUBLIC_` prefix:
 - `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-- `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`
 
 ### Conventions
 - Functional components with `StyleSheet.create` for styles

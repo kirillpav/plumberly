@@ -17,7 +17,7 @@ export async function uploadEnquiryImage(
       .upload(fileName, arrayBuffer, { contentType });
 
     if (error) {
-      console.error('Upload error:', error.message);
+      if (__DEV__) console.error('Upload error:', error.message);
       return null;
     }
 
@@ -27,7 +27,7 @@ export async function uploadEnquiryImage(
 
     return data.publicUrl;
   } catch (err) {
-    console.error('Upload failed:', err);
+    if (__DEV__) console.error('Upload failed:', err);
     return null;
   }
 }

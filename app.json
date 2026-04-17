@@ -16,11 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.fluxservice.app",
-      "config": {
-        "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
-      },
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "FluxService uses your location to show nearby plumbers.",
         "NSCameraUsageDescription": "FluxService needs camera access to take photos of plumbing issues.",
         "NSPhotoLibraryUsageDescription": "FluxService needs photo library access to attach images to enquiries."
       }
@@ -33,14 +29,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.fluxservice.app",
-      "config": {
-        "googleMaps": {
-          "apiKey": "YOUR_GOOGLE_MAPS_API_KEY"
-        }
-      },
       "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
         "CAMERA",
         "READ_EXTERNAL_STORAGE"
       ]
@@ -52,12 +41,6 @@
       "expo-font",
       "expo-secure-store",
       "expo-notifications",
-      [
-        "expo-location",
-        {
-          "locationWhenInUsePermission": "FluxService uses your location to show nearby plumbers."
-        }
-      ],
       [
         "expo-image-picker",
         {
